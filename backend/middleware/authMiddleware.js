@@ -1,6 +1,7 @@
 // backend/middleware/authMiddleware.js
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = 'sua-chave-secreta-super-dificil-de-adivinhar'; // A mesma chave secreta do auth.js
+// Use a mesma origem de segredo do auth.js
+const JWT_SECRET = process.env.JWT_SECRET || 'sua-chave-secreta-super-dificil-de-adivinhar';
 
 const protect = (req, res, next) => {
   let token;
