@@ -1,0 +1,45 @@
+### Teste 1: Buscar todos os navios (deve retornar uma lista vazia no início)
+GET http://localhost:3001/api/ships
+
+### Separador
+###
+
+### Teste 2: Criar um novo navio
+POST http://localhost:3001/api/ships
+Content-Type: application/json
+
+{
+  "name": "MSC CELESTINO",
+  "imo": "9770737",
+  "dwt": 199278,
+  "grt": 194308,
+  "net": 112543,
+  "loa": 399.9,
+  "beam": 59,
+  "draft": 16.5
+}### SEPARADOR PARA NOVOS TESTES
+###
+
+### Teste de Cadastro (Cria uma nova empresa e um novo usuário)
+POST http://localhost:3001/api/auth/register
+Content-Type: application/json
+
+{
+  "companyName": "Empresa Teste SA",
+  "userName": "Filipe Admin",
+  "email": "filipe@empresateste.com",
+  "password": "senhaSegura123"
+}
+
+
+### SEPARADOR
+###
+
+### Teste de Login
+POST http://localhost:3001/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "filipe@empresateste.com",
+  "password": "senhaSegura123"
+}

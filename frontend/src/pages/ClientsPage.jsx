@@ -1,0 +1,140 @@
+// frontend/src/pages/ClientsPage.jsx
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { API_BASE } from '../config';
+import { Modal, Box, TextField, Button, Typography } from '@mui/material';
+
+// Estilo para o Modal
+const style = {
+  position: 'absolute', top: '50%', left: '50%',
+  transform: 'translate(-50%, -50%)', width: 400,
+  bgcolor: 'background.paper', border: '2px solid #000',
+  boxShadow: 24, p: 4,
+};
+
+function ClientsPage() {
+  const [clients, setClients] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  const initialFormState = { name: '', po_number: '', vat_number: '', address: '', remark: '' };
+  const [newClient, setNewClient] = useState(initialFormState);
+
+  // Estados para o Modal de Edição
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState(null);
+
+  const fetchClients = async () => {
+    try {
+      setLoading(true);
+  const response = await axios.get(`${API_BASE}/api/clients`);
+      setClients(response.data);
+    } catch (err) {
+      setError('Não foi possível buscar os dados dos clientes.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchClients(); }, []);
+
+  const handleInputChange = (e) => {
+    setNewClient({ ...newClient, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+  await axios.post(`${API_BASE}/api/clients`, newClient);
+      setNewClient(initialFormState);
+      fetchClients();
+    } catch (err) {
+      alert('Erro ao cadastrar o cliente.');
+    }
+  };
+  
+  // Funções do Modal
+  const handleOpenEditModal = (client) => {
+    setEditingClient(client);
+    setIsModalOpen(true);
+  };
+  const handleCloseEditModal = () => {
+    setIsModalOpen(false);
+    setEditingClient(null);
+  };
+  const handleEditInputChange = (e) => {
+    setEditingClient({ ...editingClient, [e.target.name]: e.target.value });
+  };
+  const handleUpdateClient = async () => {
+    if (!editingClient) return;
+    try {
+  await axios.put(`${API_BASE}/api/clients/${editingClient.id}`, editingClient);
+      handleCloseEditModal();
+      fetchClients();
+    } catch (err) {
+      alert('Erro ao atualizar o cliente.');
+    }
+  };
+
+  return (
+    <div className="no-print" style={{ background: 'var(--background-default, #181c24)', minHeight: '100vh', padding: '32px 0' }}>
+      <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+        <div className="card-action-area" style={{ background: '#fff', borderRadius: '18px', boxShadow: '0 2px 16px 0 rgba(0,0,0,0.10)', padding: '32px 32px 24px 32px', border: 'none' }}>
+          <h2 style={{ margin: 0, fontWeight: 700, fontSize: '1.5rem', color: '#222' }}>Cadastrar Novo Cliente</h2>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '20px' }}>
+            <input type="text" name="name" placeholder="Nome *" value={newClient.name} onChange={handleInputChange} required />
+            <input type="text" name="po_number" placeholder="PO Number" value={newClient.po_number} onChange={handleInputChange} />
+            <input type="text" name="vat_number" placeholder="VAT Number" value={newClient.vat_number} onChange={handleInputChange} />
+            <input type="text" name="address" placeholder="Endereço" value={newClient.address} onChange={handleInputChange} />
+            <input type="text" name="remark" placeholder="Observação" value={newClient.remark} onChange={handleInputChange} />
+            <button type="submit" className="header-btn">Cadastrar Cliente</button>
+          </form>
+          <hr />
+          <h2>Lista de Clientes Cadastrados</h2>
+          {loading && <div>Carregando...</div>}
+          {error && <div style={{ color: 'red' }}>{error}</div>}
+          {!loading && !error && (
+            <table style={{ width: '100%', borderCollapse: 'collapse', background: '#f8fafd', borderRadius: '10px', boxShadow: '0 1px 4px 0 rgba(0,0,0,0.04)' }}>
+              <thead>
+                <tr style={{ background: '#e3eafc' }}>
+                  <th>ID</th><th>Nome</th><th>PO Number</th><th>VAT Number</th>
+                  <th>Endereço</th><th>Observação</th><th>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {clients.map((client) => (
+                  <tr key={client.id}>
+                    <td>{client.id}</td><td>{client.name}</td><td>{client.po_number}</td>
+                    <td>{client.vat_number}</td><td>{client.address}</td><td>{client.remark}</td>
+                    <td>
+                      <button className="header-btn" style={{ minWidth: 0, fontWeight: 700 }} onClick={() => handleOpenEditModal(client)}>Editar</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          <Modal open={isModalOpen} onClose={handleCloseEditModal}>
+            <Box sx={style}>
+              <Typography variant="h6" component="h2" sx={{width: '100%', mb: 2}}>
+                Editando Cliente: {editingClient?.name}
+              </Typography>
+              <TextField name="name" label="Nome" value={editingClient?.name || ''} onChange={handleEditInputChange} fullWidth />
+              <TextField name="po_number" label="PO Number" value={editingClient?.po_number || ''} onChange={handleEditInputChange} fullWidth />
+              <TextField name="vat_number" label="VAT Number" value={editingClient?.vat_number || ''} onChange={handleEditInputChange} fullWidth />
+              <TextField name="address" label="Endereço" value={editingClient?.address || ''} onChange={handleEditInputChange} fullWidth />
+              <TextField name="remark" label="Observação" value={editingClient?.remark || ''} onChange={handleEditInputChange} fullWidth />
+              <Box sx={{width: '100%', textAlign: 'right', mt: 2}}>
+                <Button onClick={handleCloseEditModal} sx={{mr: 1}}>Cancelar</Button>
+                <Button onClick={handleUpdateClient} variant="contained">Salvar Alterações</Button>
+              </Box>
+            </Box>
+          </Modal>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default ClientsPage;
