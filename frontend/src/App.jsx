@@ -19,8 +19,9 @@ import Layout from './components/Layout';
 import AuthContext from './context/AuthContext';
 
 function RequireTab({ tabKey, children }) {
-  const { settings, user } = React.useContext(AuthContext);
-  // Admin sempre pode acessar tudo
+  const { settings, settingsReady, user } = React.useContext(AuthContext);
+  // Enquanto não carregou as permissões, não renderiza nada para evitar flash
+  if (!settingsReady) return <div style={{ padding:32 }}>Carregando permissões...</div>;
   const isAdmin = (settings?.is_admin || user?.role?.toLowerCase() === 'admin');
   if (isAdmin) return children;
   const allowed = settings?.visible_tabs?.[tabKey] === true;
@@ -32,7 +33,8 @@ function RequireTab({ tabKey, children }) {
 function ProtectedRoutes() {
   return (
     <Route element={<Layout />}>
-      <Route path="/pda" element={<PdasPage />} />
+  <Route path="/pda" element={<RequireTab tabKey="pda"><PdasPage /></RequireTab>} />
+      {/* root PDA deve sempre estar permitido se pda = true ou admin */}
   <Route path="/ships" element={<RequireTab tabKey="ships"><ShipsPage /></RequireTab>} />
   <Route path="/clients" element={<RequireTab tabKey="clients"><ClientsPage /></RequireTab>} />
   <Route path="/ports" element={<RequireTab tabKey="ports"><PortsPage /></RequireTab>} />

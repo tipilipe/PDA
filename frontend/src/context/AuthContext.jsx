@@ -9,6 +9,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState(null);
+  const [settingsReady, setSettingsReady] = useState(false); // garante saber quando terminou
 
   const parseJwt = (token) => {
     try {
@@ -53,8 +54,10 @@ export const AuthProvider = ({ children }) => {
             merged.companyAcronym = c.acronym || c.sigla || c.abbr || c.code || c.shortName || '';
         }
         setSettings(merged);
+        setSettingsReady(true);
       } catch (e) {
         setSettings(null);
+        setSettingsReady(true);
       }
     };
     loadSettingsAndCompany();
@@ -100,7 +103,7 @@ export const AuthProvider = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, settings, login, logout }}>
+    <AuthContext.Provider value={{ user, settings, settingsReady, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
