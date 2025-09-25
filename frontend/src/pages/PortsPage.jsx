@@ -86,10 +86,10 @@ function PortsPage() {
 
   return (
     <div style={{ background: 'var(--background-default, #181c24)', minHeight: '100vh', padding: '32px 0' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px' }}>
-        <div className="card-action-area" style={{ background: '#fff', borderRadius: '18px', boxShadow: '0 2px 16px 0 rgba(0,0,0,0.10)', padding: '32px 32px 24px 32px', border: 'none', marginBottom: 0 }}>
-          <h2 style={{ margin: 0, fontWeight: 700, fontSize: '1.5rem', color: '#222' }}>Cadastrar Novo Porto</h2>
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center', margin: '24px 0 0 0' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px', padding: '0 20px', boxSizing:'border-box' }}>
+        <div className="app-card">
+          <h2 style={{ margin: 0, fontWeight: 700, fontSize: 'clamp(1.1rem,2vw+0.4rem,1.5rem)' }}>Cadastrar Novo Porto</h2>
+          <form onSubmit={handleSubmit} className="app-form-grid" style={{ marginTop:24 }}>
             <input className="themed-input" type="text" name="name" placeholder="Nome do Porto *" value={newPort.name} onChange={handleInputChange} required />
             <input className="themed-input" type="text" name="terminal" placeholder="Terminal *" value={newPort.terminal} onChange={handleInputChange} required />
             <input className="themed-input" type="text" name="berth" placeholder="Berço *" value={newPort.berth} onChange={handleInputChange} required />
@@ -98,34 +98,36 @@ function PortsPage() {
               {clients.map(client => (<option key={client.id} value={client.id}>{client.name}</option>))}
             </select>
             <input className="themed-input" type="text" name="remark" placeholder="Observação" value={newPort.remark} onChange={handleInputChange} />
-            <button type="submit" className="header-btn" style={{ minWidth: 0, fontWeight: 700 }}>Cadastrar Porto</button>
+            <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+              <button type="submit" className="header-btn" style={{ minWidth: 0, fontWeight: 700 }}>Cadastrar Porto</button>
+            </div>
           </form>
         </div>
-        <div className="card-action-area" style={{ background: '#fff', borderRadius: '18px', boxShadow: '0 2px 16px 0 rgba(0,0,0,0.10)', padding: '32px 32px 24px 32px', border: 'none', marginBottom: 0 }}>
-          <h2 style={{ margin: 0, fontWeight: 700, fontSize: '1.5rem', color: '#222' }}>Lista de Portos Cadastrados</h2>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, background: '#f8fafd', borderRadius: '10px', boxShadow: '0 1px 4px 0 rgba(0,0,0,0.04)' }}>
+        <div className="app-card">
+          <h2 style={{ margin: 0, fontWeight: 700, fontSize: 'clamp(1.1rem,2vw+0.4rem,1.5rem)' }}>Lista de Portos Cadastrados</h2>
+          <div className="table-responsive" style={{ marginTop:24 }}>
+            <table className="table-basic">
               <thead>
-                <tr style={{ background: '#e3eafc' }}>
-                  <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>ID</th>
-                  <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>Porto</th>
-                  <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>Terminal</th>
-                  <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>Berço</th>
-                  <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>Cliente Associado</th>
-                  <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>Observação</th>
-                  <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>Ações</th>
+                <tr>
+                  <th>ID</th>
+                  <th>Porto</th>
+                  <th>Terminal</th>
+                  <th>Berço</th>
+                  <th>Cliente Associado</th>
+                  <th>Observação</th>
+                  <th>Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {ports.map((port) => (
                   <tr key={port.id}>
-                    <td style={{ padding: '10px 8px', fontWeight: 500, color: '#222' }}>{port.id}</td>
-                    <td style={{ padding: '10px 8px', fontWeight: 500, color: '#222' }}>{port.name}</td>
-                    <td style={{ padding: '10px 8px', fontWeight: 500, color: '#222' }}>{port.terminal}</td>
-                    <td style={{ padding: '10px 8px', fontWeight: 500, color: '#222' }}>{port.berth}</td>
-                    <td style={{ padding: '10px 8px', fontWeight: 500, color: '#222' }}>{port.client_name || 'N/A'}</td>
-                    <td style={{ padding: '10px 8px', fontWeight: 500, color: '#222' }}>{port.remark}</td>
-                    <td style={{ padding: '10px 8px' }}><button className="header-btn" style={{ minWidth: 0, fontWeight: 700 }} onClick={() => handleOpenEditModal(port)}>Editar</button></td>
+                    <td>{port.id}</td>
+                    <td>{port.name}</td>
+                    <td>{port.terminal}</td>
+                    <td>{port.berth}</td>
+                    <td>{port.client_name || 'N/A'}</td>
+                    <td>{port.remark}</td>
+                    <td><button className="header-btn" style={{ minWidth: 0, fontWeight: 700 }} onClick={() => handleOpenEditModal(port)}>Editar</button></td>
                   </tr>
                 ))}
               </tbody>

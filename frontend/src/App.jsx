@@ -1,8 +1,6 @@
 // frontend/src/App.jsx
-import React, { useContext } from 'react';
-import { BrowserRouter, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
-import AuthContext from './context/AuthContext';
-
+import React, { useContext, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import ShipsPage from './pages/ShipsPage';
 import ClientsPage from './pages/ClientsPage';
@@ -16,93 +14,76 @@ import PilotagePage from './pages/PilotagePage';
 import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
 import RequireAdmin from './components/RequireAdmin';
+import Layout from './components/Layout';
+// (import duplicado removido)
+import AuthContext from './context/AuthContext';
+
+function RequireTab({ tabKey, children }) {
+  const { settings, user } = React.useContext(AuthContext);
+  // Admin sempre pode acessar tudo
+  const isAdmin = (settings?.is_admin || user?.role?.toLowerCase() === 'admin');
+  if (isAdmin) return children;
+  const allowed = settings?.visible_tabs?.[tabKey] === true;
+  if (!allowed) return <Navigate to="/pda" replace />;
+  return children;
+}
 
 
-function DashboardLayout() {
-  const { logout, settings, user } = useContext(AuthContext);
-  const location = useLocation();
-  const navStyle = { backgroundColor: 'transparent', padding: 0, marginBottom: 0, borderBottom: 'none', display: 'flex', alignItems: 'center' };
-  const linkContainerStyle = { display: 'flex', gap: '6px', flexWrap: 'wrap' };
-
-  // Map de rotas para facilitar o match
-  const navLinksAll = [
-    { to: '/pda', label: '★ Gerar PDA' },
-    { to: '/dashboard', label: 'Dashboard' },
-    { to: '/ships', label: 'Navios' },
-    { to: '/clients', label: 'Clientes' },
-    { to: '/ports', label: 'Portos' },
-    { to: '/services', label: 'Serviços' },
-    { to: '/pilotage', label: 'Praticagem' },
-    { to: '/port-services', label: 'Vínculos' },
-    { to: '/calculations', label: 'Cálculos' },
-    { to: '/port-remarks', label: 'Observações' },
-    { to: '/profile', label: 'Perfil' },
-    { to: '/admin', label: 'Administração' },
-  ];
-
-  const role = (user?.role || '').toLowerCase();
-  const allowAll = role === 'admin' || role === 'superadmin' || settings?.is_admin === true;
-  const canSee = (to) => {
-    if (allowAll) return true;
-    const key = to.replace(/^\//, '').replace(/-/g, '_');
-    const vis = settings?.visible_tabs || {};
-    if (!key) return false;
-    return vis[key] === true; // somente abas explicitamente true
-  };
-  const navLinks = navLinksAll.filter(l => canSee(l.to));
-
+function ProtectedRoutes() {
   return (
-    <div>
-      <nav style={navStyle}>
-        <div style={linkContainerStyle}>
-          {navLinks.map(link => (
-            <Link
-              key={link.to}
-              to={link.to}
-              className={`header-btn btn btn-primary${location.pathname.startsWith(link.to) ? ' active' : ''}`}
-            >
-              {link.label}
-            </Link>
-          ))}
-        </div>
-  <button onClick={logout} className="header-btn btn btn-outline-danger sair">Sair</button>
-      </nav>
-      <main style={{ padding: '0 20px' }}>
-        <Routes>
-          <Route path="/pda" element={<PdasPage />} />
-          <Route path="/ships" element={<ShipsPage />} />
-          <Route path="/clients" element={<ClientsPage />} />
-          <Route path="/ports" element={<PortsPage />} />
-          <Route path="/services" element={<ServicePage />} />
-          <Route path="/pilotage" element={<PilotagePage />} />
-          <Route path="/port-services" element={<PortServicesPage />} />
-          <Route path="/calculations" element={<CalculationsPage />} />
-          <Route path="/port-remarks" element={<PortRemarksPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/admin" element={<RequireAdmin><AdminPage /></RequireAdmin>} />
-          <Route path="/dashboard" element={<div>Dashboard</div>} />
-          <Route path="/" element={<Navigate to="/pda" />} />
-        </Routes>
-      </main>
-    </div>
+    <Route element={<Layout />}>
+      <Route path="/pda" element={<PdasPage />} />
+  <Route path="/ships" element={<RequireTab tabKey="ships"><ShipsPage /></RequireTab>} />
+  <Route path="/clients" element={<RequireTab tabKey="clients"><ClientsPage /></RequireTab>} />
+  <Route path="/ports" element={<RequireTab tabKey="ports"><PortsPage /></RequireTab>} />
+  <Route path="/services" element={<RequireTab tabKey="services"><ServicePage /></RequireTab>} />
+  <Route path="/pilotage" element={<RequireTab tabKey="pilotage"><PilotagePage /></RequireTab>} />
+  <Route path="/port-services" element={<RequireTab tabKey="port_services"><PortServicesPage /></RequireTab>} />
+  <Route path="/calculations" element={<RequireTab tabKey="calculations"><CalculationsPage /></RequireTab>} />
+  <Route path="/port-remarks" element={<RequireTab tabKey="port_remarks"><PortRemarksPage /></RequireTab>} />
+  <Route path="/profile" element={<RequireTab tabKey="profile"><ProfilePage /></RequireTab>} />
+  <Route path="/admin" element={<RequireAdmin><RequireTab tabKey="admin"><AdminPage /></RequireTab></RequireAdmin>} />
+      <Route path="/dashboard" element={<div>Dashboard</div>} />
+    </Route>
   );
 }
 
 function App() {
-  const { user } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
+
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
-      <div className="no-print">
+      <Routes>
+        {/* Se já estiver logado e acessar /login, redireciona para /pda */}
+        <Route path="/login" element={user ? <Navigate to="/pda" replace /> : <LoginPage />} />
+        {/* Rota de logout que executa o logout e redireciona */}
+        <Route
+          path="/logout"
+          element={
+            <LogoutRoute onLogout={logout} />
+          }
+        />
         {user ? (
-          <DashboardLayout />
+          <>
+            {ProtectedRoutes()}
+            <Route path="/" element={<Navigate to="/pda" replace />} />
+          </>
         ) : (
-          <Routes>
-            <Route path="*" element={<LoginPage />} />
-          </Routes>
+          <>
+            <Route path="/*" element={<Navigate to="/login" replace />} />
+          </>
         )}
-      </div>
+      </Routes>
     </BrowserRouter>
   );
 }
 
 export default App;
+
+// Pequeno componente de rota para efetivar o logout e redirecionar
+function LogoutRoute({ onLogout }) {
+  useEffect(() => {
+    try { onLogout?.(); } catch {}
+  }, [onLogout]);
+  return <Navigate to="/login" replace />;
+}

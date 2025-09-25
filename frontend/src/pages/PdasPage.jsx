@@ -28,6 +28,9 @@ function PdasPage() {
   const [pdaResult, setPdaResult] = useState(null);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [pdasPage, setPdasPage] = useState(1); // paginação do painel lateral
+  const PDAS_PAGE_SIZE = 20;
+  const [isPrinting, setIsPrinting] = useState(false);
   const [displayItems, setDisplayItems] = useState([]);
   const [showBankDetails, setShowBankDetails] = useState(true);
   const [showBRL, setShowBRL] = useState(true);
@@ -145,6 +148,35 @@ function PdasPage() {
       },
     })
   );
+
+  // Print robusto: aguarda ciclo de renderização para evitar página em branco
+  const handlePrint = async () => {
+    if (!pdaResult || isPrinting) return;
+    setIsPrinting(true);
+    const sanitize = (s) => String(s || '')
+      .replace(/[\\/:*?"<>|]/g, '-')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const pdaNo = pdaNumber || pdaResult?.pda_number || 'PDA';
+    const shipName = pdaResult?.ship?.name || '';
+    const portName = pdaResult?.port?.name || '';
+    const clientName = pdaResult?.client?.name || '';
+    const desired = [pdaNo, shipName, portName, clientName].filter(Boolean).map(sanitize).join(' - ');
+    const prevTitle = document.title;
+    const nextTitle = desired || prevTitle;
+    const restore = () => { document.title = prevTitle; window.removeEventListener('afterprint', restore); setIsPrinting(false); };
+    window.addEventListener('afterprint', restore, { once: true });
+    document.title = nextTitle;
+    // Garante que o componente de impressão está no DOM e layout calculado
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    // Força reflow explícito (lê altura)
+    const el = document.querySelector('.printable-area');
+    if (el) void el.offsetHeight; // eslint-disable-line no-unused-expressions
+    // Timeout mínimo para permitir aplicação de estilos de mídia print
+    setTimeout(() => {
+      try { window.print(); } catch { restore(); }
+    }, 20);
+  };
 
   useEffect(() => {
     if (pdaResult) {
@@ -424,36 +456,44 @@ function PdasPage() {
   };
 
   const filteredPdas = savedPdas.filter(pda => (pda.pda_number && pda.pda_number.toLowerCase().includes(searchTerm.toLowerCase())) || (pda.client_name && pda.client_name.toLowerCase().includes(searchTerm.toLowerCase())) || (pda.ship_name && pda.ship_name.toLowerCase().includes(searchTerm.toLowerCase())) || (pda.port_name && pda.port_name.toLowerCase().includes(searchTerm.toLowerCase())));
+  const totalPdasPages = Math.max(1, Math.ceil(filteredPdas.length / PDAS_PAGE_SIZE));
+  const safePage = Math.min(pdasPage, totalPdasPages);
+  const paginatedPdas = filteredPdas.slice((safePage - 1) * PDAS_PAGE_SIZE, safePage * PDAS_PAGE_SIZE);
+  useEffect(() => { // reset page quando filtro muda
+    setPdasPage(1);
+  }, [searchTerm]);
   
   return (
     <>
       <div className="no-print" style={{ background: 'var(--background-default, #181c24)', minHeight: '100vh', padding: '32px 0' }}>
-        <div style={{ display: 'flex', gap: '32px', maxWidth: '1600px', margin: '0 auto', alignItems: 'flex-start' }}>
+        <div className="pda-layout">
           {/* Área principal (formulário + resultado) */}
-          <div style={{ flex: 3, minWidth: 0 }}>
-            <div className="card-action-area" style={{ background: '#fff', borderRadius: '18px', boxShadow: '0 2px 16px 0 rgba(0,0,0,0.10)', padding: '32px 32px 24px 32px', marginBottom: '32px', border: 'none' }}>
-              <h2 style={{ margin: 0, fontWeight: 700, fontSize: '1.5rem', color: '#222' }}>Generate Proforma Disbursement Account (PDA)</h2>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center', margin: '24px 0 0 0' }}>
+          <div className="pda-main">
+            <div className="pda-card">
+              <h2 className="pda-title">Generate Proforma Disbursement Account (PDA)</h2>
+              <div className="pda-form-grid">
                 <select className="themed-input" value={selectedClientId} onChange={(e) => setSelectedClientId(e.target.value)}><option value="">-- CLIENT --</option>{clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
                 <select className="themed-input" value={selectedShipId} onChange={(e) => setSelectedShipId(e.target.value)}><option value="">-- VESSEL --</option>{ships.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select>
                 <select className="themed-input" value={selectedPortId} onChange={(e) => setSelectedPortId(e.target.value)}><option value="">-- PORT --</option>{ports.map(p => <option key={p.id} value={p.id}>{`${p.name} - ${p.terminal} - ${p.berth}`}</option>)}</select>
                 <input className="themed-input" type="text" placeholder="R.O.E." value={roe} onChange={(e) => setRoe(e.target.value)} />
                 <input className="themed-input" type="text" placeholder="PDA NUMBER" value={pdaNumber} onChange={(e) => setPdaNumber(e.target.value)} />
-                <input className="themed-input" type="text" placeholder="CARGO DESCRIPTION" value={cargo} onChange={(e) => setCargo(e.target.value)} style={{width: '200px'}}/>
+                <input className="themed-input" type="text" placeholder="CARGO DESCRIPTION" value={cargo} onChange={(e) => setCargo(e.target.value)} />
                 <input className="themed-input" type="number" placeholder="TOTAL CARGO (MT)" value={totalCargo} onChange={(e) => setTotalCargo(e.target.value)} />
-                <label style={{ fontWeight: 500, color: '#222' }}>ETA:</label><input className="themed-input" type="date" value={eta} onChange={(e) => setEta(e.target.value)} />
-                <label style={{ fontWeight: 500, color: '#222' }}>ETB:</label><input className="themed-input" type="date" value={etb} onChange={(e) => setEtb(e.target.value)} />
-                <label style={{ fontWeight: 500, color: '#222' }}>ETD:</label><input className="themed-input" type="date" value={etd} onChange={(e) => setEtd(e.target.value)} />
-                <button className="header-btn" onClick={handleGeneratePda} disabled={loading}>{loading ? 'CALCULATING...' : 'GENERATE PDA'}</button>
+                <div className="pda-date-field"><label>ETA</label><input className="themed-input" type="date" value={eta} onChange={(e) => setEta(e.target.value)} /></div>
+                <div className="pda-date-field"><label>ETB</label><input className="themed-input" type="date" value={etb} onChange={(e) => setEtb(e.target.value)} /></div>
+                <div className="pda-date-field"><label>ETD</label><input className="themed-input" type="date" value={etd} onChange={(e) => setEtd(e.target.value)} /></div>
+                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                  <button className="header-btn" onClick={handleGeneratePda} disabled={loading} style={{ whiteSpace:'nowrap' }}>{loading ? 'CALCULATING...' : 'GENERATE PDA'}</button>
+                </div>
               </div>
-              {error && <div style={{ color: 'red', marginTop: 16 }}>{error}</div>}
+              {error && <div style={{ color: 'red', marginTop: 12, fontSize: '.8rem' }}>{error}</div>}
             </div>
 
             {pdaResult && (
-              <div className="card-action-area" style={{ background: '#fff', borderRadius: '18px', boxShadow: '0 2px 16px 0 rgba(0,0,0,0.10)', padding: '32px 32px 24px 32px', marginTop: '0', marginBottom: '32px', border: 'none' }}>
+              <div className="pda-card" style={{ marginBottom:'32px' }}>
                 <h3 style={{ fontWeight: 700, color: '#222', marginBottom: 8 }}>PDA RESULT FOR CLIENT: {pdaResult.client?.name || '-'}</h3>
                 <h4 style={{ fontWeight: 500, color: '#444', marginBottom: 24 }}>VESSEL: {pdaResult.ship?.name || '-'} | PORT: {pdaResult.port?.name || '-'} - {pdaResult.port?.terminal || '-'} - {pdaResult.port?.berth || '-'}</h4>
-                <div style={{ overflowX: 'auto' }}>
+                <div className="pda-table-wrapper">
                   {/* Tabela principal (somente itens base) */}
                   <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                     <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, marginTop: 0, background: '#f8fafd', borderRadius: '12px', boxShadow: '0 1px 4px 0 rgba(0,0,0,0.04)' }}>
@@ -559,9 +599,9 @@ function PdasPage() {
                   {allServices.map(service => <option key={service.id} value={service.name} />)}
                 </datalist>
                 <button className="header-btn" onClick={handleAddItem} style={{ marginTop: '18px', minWidth: 0, fontWeight: 700 }}>(+) Add New Item</button>
-                <div style={{ marginTop: '24px', display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+                <div className="pda-actions-wrap">
                   <button className="header-btn" onClick={handleSavePda} style={{ minWidth: 0, fontWeight: 700 }}>SAVE PDA</button>
-                  <button className="header-btn" onClick={() => window.print()} style={{ backgroundColor: '#3f51b5', color: 'white', minWidth: 0, fontWeight: 700 }}>PRINT / GENERATE PDF</button>
+                  <button className="header-btn" onClick={handlePrint} disabled={!pdaResult || isPrinting} style={{ backgroundColor: '#3f51b5', color: 'white', minWidth: 0, fontWeight: 700, opacity: (!pdaResult || isPrinting) ? .6 : 1 }}>{isPrinting ? 'PREPARING...' : 'PRINT / GENERATE PDF'}</button>
                   <fieldset style={{ border: '1px solid #ccc', padding: '10px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '5px', borderRadius: '8px', background: '#f8fafd' }}><legend style={{ fontSize: '12px' }}>Print Options</legend>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px' }}><input type="checkbox" checked={showBankDetails} onChange={() => setShowBankDetails(!showBankDetails)} /> BANK DETAILS</label>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px' }}><input type="checkbox" checked={showBRL} onChange={() => setShowBRL(!showBRL)} /> BRL COLUMN</label>
@@ -579,48 +619,67 @@ function PdasPage() {
                     </div>
                   )}
                 </div>
-                <div style={{ marginTop: '32px' }}><h3 style={{ color: '#222', fontWeight: 700 }}>REMARKS</h3>{(Array.isArray(pdaResult.remarks) ? pdaResult.remarks : []).map(remark => (<p key={remark.id || remark.remark_text} style={{ whiteSpace: 'pre-wrap', color: '#444', fontWeight: 500 }}>{remark.remark_text}</p>))}</div>
+                <div style={{ marginTop: '32px' }}><h3 style={{ color: '#222', fontWeight: 700 }}>REMARKS</h3>{(Array.isArray(pdaResult.remarks) ? pdaResult.remarks : []).map(remark => (<p key={remark.id || remark.remark_text} style={{ whiteSpace: 'pre-wrap', color: '#444', fontWeight: 500, fontSize:'.85rem' }}>{remark.remark_text}</p>))}</div>
               </div>
             )}
           </div>
 
           {/* Área lateral: últimas PDAs salvas */}
-          <div className="card-action-area" style={{ flex: 1, background: '#fff', borderRadius: '18px', boxShadow: '0 2px 16px 0 rgba(0,0,0,0.10)', padding: '24px 18px', border: 'none', minWidth: 0 }}>
-            <h3 style={{ fontWeight: 700, color: '#222', marginBottom: 16 }}>LAST SAVED PDAs</h3>
-            <input className="themed-input" type="text" placeholder="SEARCH..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', padding: '8px', marginBottom: '16px', boxSizing: 'border-box' }}/>
-            <div style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, textAlign: 'left', background: '#f8fafd', borderRadius: '10px', boxShadow: '0 1px 4px 0 rgba(0,0,0,0.04)' }}>
+          <div className="pda-card pda-card--compact pda-side" style={{ display:'flex', flexDirection:'column', gap:12 }}>
+            <h3 style={{ fontWeight: 700, color: '#222', margin:0, fontSize:'clamp(.82rem,1.1vw + .4rem,1.05rem)' }}>LAST SAVED PDAs</h3>
+            <input className="themed-input" type="text" placeholder="SEARCH..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', padding: '6px 10px', margin:0, boxSizing: 'border-box', fontSize:'.72rem' }}/>
+            <div style={{ borderRadius:10, background:'#f8fafd', boxShadow:'0 1px 4px 0 rgba(0,0,0,0.04)', overflow:'hidden' }}>
+              <table style={{ width: '100%', borderCollapse:'separate', borderSpacing:0, textAlign:'left', fontSize:'.65rem' }}>
                 <thead>
-                  <tr style={{ background: '#e3eafc' }}>
-                    <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>PDA</th><th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>CLIENT</th>
-                    <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>VESSEL</th><th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>PORT</th><th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>ACTION</th>
+                  <tr style={{ background:'#e3eafc' }}>
+                    <th style={{ padding:'6px 6px', fontWeight:600, color:'#222' }}>PDA</th>
+                    <th style={{ padding:'6px 6px', fontWeight:600, color:'#222' }}>CLIENT</th>
+                    <th style={{ padding:'6px 6px', fontWeight:600, color:'#222' }}>VESSEL</th>
+                    <th style={{ padding:'6px 6px', fontWeight:600, color:'#222' }}>PORT</th>
+                    <th style={{ padding:'6px 6px', fontWeight:600, color:'#222' }}>ACTION</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredPdas.map(pda => (
-                    <tr key={pda.id}>
-                      <td style={{ padding: '10px 8px', fontWeight: 500, color: '#222' }}>{pda.pda_number}</td><td style={{ padding: '10px 8px', fontWeight: 500, color: '#222' }}>{pda.client_name}</td>
-                      <td style={{ padding: '10px 8px', fontWeight: 500, color: '#222' }}>{pda.ship_name}</td><td style={{ padding: '10px 8px', fontWeight: 500, color: '#222' }}>{pda.port_name}</td>
-                      <td style={{ padding: '10px 8px' }}><button className="header-btn" style={{ minWidth: 0, fontWeight: 700 }} onClick={() => handleOpenPda(pda.id)}>OPEN</button></td>
+                  {paginatedPdas.map(pda => (
+                    <tr key={pda.id} style={{ borderBottom:'1px solid #e0e7ef' }}>
+                      <td style={{ padding:'6px 6px', fontWeight:500, color:'#222' }}>{pda.pda_number}</td>
+                      <td style={{ padding:'6px 6px', fontWeight:500, color:'#222', whiteSpace:'nowrap', maxWidth:90, overflow:'hidden', textOverflow:'ellipsis' }}>{pda.client_name}</td>
+                      <td style={{ padding:'6px 6px', fontWeight:500, color:'#222', whiteSpace:'nowrap', maxWidth:100, overflow:'hidden', textOverflow:'ellipsis' }}>{pda.ship_name}</td>
+                      <td style={{ padding:'6px 6px', fontWeight:500, color:'#222', whiteSpace:'nowrap', maxWidth:90, overflow:'hidden', textOverflow:'ellipsis' }}>{pda.port_name}</td>
+                      <td style={{ padding:'4px 6px' }}><button className="header-btn btn-sm" style={{ minWidth:0, fontWeight:700, padding:'4px 8px', fontSize:'.60rem' }} onClick={() => handleOpenPda(pda.id)}>OPEN</button></td>
                     </tr>
                   ))}
+                  {paginatedPdas.length === 0 && (
+                    <tr><td colSpan={5} style={{ padding:'8px', fontSize:'.65rem', textAlign:'center', color:'#555' }}>No results</td></tr>
+                  )}
                 </tbody>
               </table>
+              {/* Paginação */}
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'4px 6px', background:'#e3eafc', gap:6 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+                  <button className="btn btn-sm" style={{ padding:'2px 6px', fontSize:'.55rem' }} disabled={safePage===1} onClick={() => setPdasPage(p => Math.max(1, p-1))}>Prev</button>
+                  <button className="btn btn-sm" style={{ padding:'2px 6px', fontSize:'.55rem' }} disabled={safePage===totalPdasPages} onClick={() => setPdasPage(p => Math.min(totalPdasPages, p+1))}>Next</button>
+                </div>
+                <div style={{ fontSize:'.58rem', fontWeight:600 }}>Page {safePage} / {totalPdasPages}</div>
+                <div style={{ fontSize:'.55rem', opacity:.7 }}>{filteredPdas.length} total</div>
+              </div>
             </div>
           </div>
         </div>
       </div>
       
-      <div className="printable-area">
-        <PrintablePda
-          ref={componentRef}
-          pdaResult={pdaResult ? { ...pdaResult, pda_number: pdaNumber || pdaResult.pda_number } : null}
-          showBankDetails={showBankDetails}
-          showBRL={showBRL}
-          showUSD={showUSD}
-          companyProfile={companyProfile}
-          selectedBank={selectedBank}
-        />
+      <div className="printable-area" aria-hidden="false">
+        <div className="print-wrapper" style={{ display:'block' }}>
+          <PrintablePda
+            ref={componentRef}
+            pdaResult={pdaResult ? { ...pdaResult, pda_number: pdaNumber || pdaResult.pda_number } : null}
+            showBankDetails={showBankDetails}
+            showBRL={showBRL}
+            showUSD={showUSD}
+            companyProfile={companyProfile}
+            selectedBank={selectedBank}
+          />
+        </div>
       </div>
     </>
   );

@@ -58,26 +58,6 @@ module.exports = (pool) => {
         return res.status(409).json({ error: 'Este nome de serviço já pertence a outro registro.' });
       }
       console.error('Erro ao atualizar serviço:', err);
-
-      res.status(500).json({ error: 'Erro interno do servidor' });
-    }
-  });
-
-  // Rota para deletar um serviço
-  router.delete('/:id', protect, async (req, res) => {
-    const { id } = req.params;
-    const { companyId } = req.user;
-    try {
-      const result = await pool.query(
-        'DELETE FROM services WHERE id = $1 AND company_id = $2 RETURNING *',
-        [id, companyId]
-      );
-      if (result.rows.length === 0) {
-        return res.status(404).json({ error: 'Serviço não encontrado ou não pertence à sua empresa.' });
-      }
-      res.json({ success: true, deleted: result.rows[0] });
-    } catch (err) {
-      console.error('Erro ao deletar serviço:', err);
       res.status(500).json({ error: 'Erro interno do servidor' });
     }
   });

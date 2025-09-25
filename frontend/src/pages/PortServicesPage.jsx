@@ -88,9 +88,9 @@ function PortServicesPage() {
 
   return (
     <div className="no-print" style={{ background: 'var(--background-default, #181c24)', minHeight: '100vh', padding: '32px 0' }}>
-      <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px' }}>
-        <div className="card-action-area" style={{ background: '#fff', borderRadius: '18px', boxShadow: '0 2px 16px 0 rgba(0,0,0,0.10)', padding: '32px 32px 24px 32px', border: 'none' }}>
-          <h2 style={{ margin: 0, fontWeight: 700, fontSize: '1.5rem', color: '#222' }}>Vincular Serviços a um Porto</h2>
+      <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px', padding: '0 20px', boxSizing:'border-box' }}>
+        <div className="app-card">
+          <h2 style={{ margin: 0, fontWeight: 700, fontSize: 'clamp(1.1rem,2vw+0.4rem,1.5rem)' }}>Vincular Serviços a um Porto</h2>
           <div style={{ marginBottom: '24px', marginTop: '16px' }}>
             <select className="themed-input" value={selectedPortId} onChange={(e) => setSelectedPortId(e.target.value)}>
               <option value="">-- Selecione um Porto --</option>
@@ -102,7 +102,7 @@ function PortServicesPage() {
 
           {selectedPortId && (
             <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap' }}>
-              <div style={{ background: '#f8fafd', borderRadius: '12px', boxShadow: '0 1px 4px 0 rgba(0,0,0,0.04)', padding: '18px', width: '45%' }}>
+              <div style={{ background: '#f8fafd', borderRadius: '12px', boxShadow: '0 1px 4px 0 rgba(0,0,0,0.04)', padding: '18px', flex: '1 1 320px', minWidth: 260 }}>
                 <h3 style={{ color: '#222', fontWeight: 700, marginBottom: 12 }}>Serviços Disponíveis</h3>
                 {availableServices.map(s => (
                   <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0' }}>
@@ -111,7 +111,7 @@ function PortServicesPage() {
                   </div>
                 ))}
               </div>
-              <div style={{ background: '#f8fafd', borderRadius: '12px', boxShadow: '0 1px 4px 0 rgba(0,0,0,0.04)', padding: '18px', width: '45%' }}>
+              <div style={{ background: '#f8fafd', borderRadius: '12px', boxShadow: '0 1px 4px 0 rgba(0,0,0,0.04)', padding: '18px', flex: '1 1 320px', minWidth: 260 }}>
                 <h3 style={{ color: '#222', fontWeight: 700, marginBottom: 12 }}>Serviços Vinculados</h3>
                 {linkedServices.map(s => (
                   <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0' }}>

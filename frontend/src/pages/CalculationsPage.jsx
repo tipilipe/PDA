@@ -97,10 +97,10 @@ function CalculationsPage() {
 
   return (
     <div className="no-print" style={{ background: 'var(--background-default, #181c24)', minHeight: '100vh', padding: '32px 0' }}>
-      <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px' }}>
-        <div className="card-action-area" style={{ background: '#fff', borderRadius: '18px', boxShadow: '0 2px 16px 0 rgba(0,0,0,0.10)', padding: '32px 32px 24px 32px', border: 'none' }}>
-          <h2 style={{ margin: 0, fontWeight: 700, fontSize: '1.5rem', color: '#222' }}>Gerenciar Fórmulas de Serviços</h2>
-          <div style={{ margin: '24px 0 0 0' }}>
+      <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px', padding:'0 20px', boxSizing:'border-box' }}>
+        <div className="app-card">
+          <h2 style={{ margin: 0, fontWeight: 700, fontSize: 'clamp(1.1rem,2vw+0.4rem,1.6rem)' }}>Gerenciar Fórmulas de Serviços</h2>
+          <div style={{ marginTop:24 }}>
             <FormControl fullWidth sx={{ mb: 2 }}>
               <InputLabel id="port-select-label">Porto</InputLabel>
               <Select labelId="port-select-label" value={selectedPortId} label="Porto" onChange={e => { setSelectedPortId(e.target.value); handleCancelEdit(); }}>
@@ -111,9 +111,9 @@ function CalculationsPage() {
               </Select>
             </FormControl>
             {selectedPortId && (
-              <div className="card-action-area" style={{ background: '#f8fafd', borderRadius: '14px', boxShadow: '0 1px 4px 0 rgba(0,0,0,0.04)', padding: '24px', marginTop: '8px', border: 'none' }}>
+              <div className="app-card" style={{ background:'#f8fafd', marginTop:8, padding:24 }}>
                 <form onSubmit={handleSubmit}>
-                  <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                  <div className="app-form-grid" style={{ marginTop:0 }}>
                     <FormControl style={{ minWidth: 180 }} size="small" disabled={!!editingCalcId}>
                       <InputLabel>Serviço</InputLabel>
                       <Select name="service_id" value={form.service_id} label="Serviço" onChange={handleInputChange} required>
@@ -153,32 +153,32 @@ function CalculationsPage() {
                       </div>
                     )}
                   </div>
-                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap:'wrap' }}>
                     <button type="submit" className="header-btn" style={{ minWidth: 0, fontWeight: 700 }}>Salvar Fórmula</button>
                     {editingCalcId && <button type="button" className="header-btn" style={{ minWidth: 0, fontWeight: 700, background: '#eee', color: '#222' }} onClick={handleCancelEdit}>Cancelar Edição</button>}
                   </div>
                 </form>
                 <div style={{ marginTop: '32px' }}>
                   <h3 style={{ color: '#222', fontWeight: 700, marginBottom: 12 }}>Fórmulas Salvas para este Porto</h3>
-                  <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, background: '#fff', borderRadius: '10px', boxShadow: '0 1px 4px 0 rgba(0,0,0,0.04)' }}>
+                  <div className="table-responsive">
+                    <table className="table-basic" style={{ background:'#fff' }}>
                       <thead>
-                        <tr style={{ background: '#e3eafc' }}>
-                          <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>Serviço</th>
-                          <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>Método</th>
-                          <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>Moeda</th>
-                          <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>Fórmula/Valor</th>
-                          <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>Ações</th>
+                        <tr>
+                          <th>Serviço</th>
+                          <th>Método</th>
+                          <th>Moeda</th>
+                          <th>Fórmula/Valor</th>
+                          <th>Ações</th>
                         </tr>
                       </thead>
                       <tbody>
                         {calculations.map(c => (
                           <tr key={c.id}>
-                            <td style={{ padding: '10px 8px', fontWeight: 500, color: '#222' }}>{c.service_name}</td>
-                            <td style={{ padding: '10px 8px', fontWeight: 500, color: '#222' }}>{c.calculation_method}</td>
-                            <td style={{ padding: '10px 8px', fontWeight: 500, color: '#222' }}>{c.currency}</td>
-                            <td style={{ padding: '10px 8px', fontWeight: 500, color: '#222', wordBreak: 'break-all' }}>{c.formula}</td>
-                            <td style={{ padding: '10px 8px' }}>
+                            <td>{c.service_name}</td>
+                            <td>{c.calculation_method}</td>
+                            <td>{c.currency}</td>
+                            <td style={{ wordBreak: 'break-all' }}>{c.formula}</td>
+                            <td>
                               <button className="header-btn" style={{ minWidth: 0, fontWeight: 700 }} onClick={() => handleEditClick(c)}>Editar</button>
                               <button className="header-btn" style={{ minWidth: 0, fontWeight: 700, color: 'red', background: 'transparent' }} onClick={() => handleDeleteClick(c.id)}>Excluir</button>
                             </td>

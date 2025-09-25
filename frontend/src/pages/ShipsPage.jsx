@@ -101,10 +101,10 @@ function ShipsPage() {
 
   return (
     <div style={{ background: 'var(--background-default, #181c24)', minHeight: '100vh', padding: '32px 0' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px' }}>
-        <div className="card-action-area" style={{ background: '#fff', borderRadius: '18px', boxShadow: '0 2px 16px 0 rgba(0,0,0,0.10)', padding: '32px 32px 24px 32px', border: 'none', marginBottom: 0 }}>
-          <h2 style={{ margin: 0, fontWeight: 700, fontSize: '1.5rem', color: '#222' }}>Cadastrar Novo Navio</h2>
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center', margin: '24px 0 0 0' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px', padding: '0 20px', boxSizing:'border-box' }}>
+        <div className="app-card">
+          <h2 style={{ margin: 0, fontWeight: 700, fontSize: 'clamp(1.1rem,2vw+0.4rem,1.5rem)' }}>Cadastrar Novo Navio</h2>
+          <form onSubmit={handleSubmit} className="app-form-grid" style={{ marginTop:24 }}>
             <input className="themed-input" type="text" name="name" placeholder="Nome *" value={newShip.name} onChange={handleInputChange} required />
             <input className="themed-input" type="text" name="imo" placeholder="IMO" value={newShip.imo} onChange={handleInputChange} />
             <input className="themed-input" type="text" name="flag" placeholder="Bandeira" value={newShip.flag} onChange={handleInputChange} />
@@ -116,49 +116,51 @@ function ShipsPage() {
             <input className="themed-input" type="number" name="beam" placeholder="BEAM (Boca)" value={newShip.beam} onChange={handleInputChange} />
             <input className="themed-input" type="number" name="draft" placeholder="DRAFT (Calado)" value={newShip.draft} onChange={handleInputChange} />
             <input className="themed-input" type="number" name="depth" placeholder="DEPTH (Pontal)" value={newShip.depth} onChange={handleInputChange} />
-            <button type="submit" className="header-btn" style={{ minWidth: 0, fontWeight: 700 }}>Cadastrar Navio</button>
+            <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+              <button type="submit" className="header-btn" style={{ minWidth: 0, fontWeight: 700 }}>Cadastrar Navio</button>
+            </div>
           </form>
         </div>
-        <div className="card-action-area" style={{ background: '#fff', borderRadius: '18px', boxShadow: '0 2px 16px 0 rgba(0,0,0,0.10)', padding: '32px 32px 24px 32px', border: 'none', marginBottom: 0 }}>
-          <h2 style={{ margin: 0, fontWeight: 700, fontSize: '1.5rem', color: '#222' }}>Lista de Navios Cadastrados</h2>
+        <div className="app-card">
+          <h2 style={{ margin: 0, fontWeight: 700, fontSize: 'clamp(1.1rem,2vw+0.4rem,1.5rem)' }}>Lista de Navios Cadastrados</h2>
           {loading && <div>Carregando navios...</div>}
           {error && <div style={{ color: 'red' }}>{error}</div>}
           {!loading && !error && (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, background: '#f8fafd', borderRadius: '10px', boxShadow: '0 1px 4px 0 rgba(0,0,0,0.04)' }}>
+            <div className="table-responsive">
+              <table className="table-basic">
                 <thead>
-                  <tr style={{ background: '#e3eafc' }}>
-                    <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>ID</th>
-                    <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>Nome</th>
-                    <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>IMO</th>
-                    <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>Bandeira</th>
-                    <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>Ano</th>
-                    <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>DWT</th>
-                    <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>GRT</th>
-                    <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>NET</th>
-                    <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>LOA</th>
-                    <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>BEAM</th>
-                    <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>DRAFT</th>
-                    <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>DEPTH</th>
-                    <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>Ações</th>
+                  <tr>
+                    <th>ID</th>
+                    <th>Nome</th>
+                    <th>IMO</th>
+                    <th>Bandeira</th>
+                    <th>Ano</th>
+                    <th>DWT</th>
+                    <th>GRT</th>
+                    <th>NET</th>
+                    <th>LOA</th>
+                    <th>BEAM</th>
+                    <th>DRAFT</th>
+                    <th>DEPTH</th>
+                    <th>Ações</th>
                   </tr>
                 </thead>
                 <tbody>
                   {ships.map((ship) => (
                     <tr key={ship.id}>
-                      <td style={{ padding: '10px 8px', fontWeight: 500, color: '#222' }}>{ship.id}</td>
-                      <td style={{ padding: '10px 8px', fontWeight: 500, color: '#222' }}>{ship.name}</td>
-                      <td style={{ padding: '10px 8px', fontWeight: 500, color: '#222' }}>{ship.imo}</td>
-                      <td style={{ padding: '10px 8px', fontWeight: 500, color: '#222' }}>{ship.flag}</td>
-                      <td style={{ padding: '10px 8px', fontWeight: 500, color: '#222' }}>{ship.year}</td>
-                      <td style={{ padding: '10px 8px', fontWeight: 500, color: '#222' }}>{ship.dwt}</td>
-                      <td style={{ padding: '10px 8px', fontWeight: 500, color: '#222' }}>{ship.grt}</td>
-                      <td style={{ padding: '10px 8px', fontWeight: 500, color: '#222' }}>{ship.net}</td>
-                      <td style={{ padding: '10px 8px', fontWeight: 500, color: '#222' }}>{ship.loa}</td>
-                      <td style={{ padding: '10px 8px', fontWeight: 500, color: '#222' }}>{ship.beam}</td>
-                      <td style={{ padding: '10px 8px', fontWeight: 500, color: '#222' }}>{ship.draft}</td>
-                      <td style={{ padding: '10px 8px', fontWeight: 500, color: '#222' }}>{ship.depth}</td>
-                      <td style={{ padding: '10px 8px' }}>
+                      <td>{ship.id}</td>
+                      <td>{ship.name}</td>
+                      <td>{ship.imo}</td>
+                      <td>{ship.flag}</td>
+                      <td>{ship.year}</td>
+                      <td>{ship.dwt}</td>
+                      <td>{ship.grt}</td>
+                      <td>{ship.net}</td>
+                      <td>{ship.loa}</td>
+                      <td>{ship.beam}</td>
+                      <td>{ship.draft}</td>
+                      <td>{ship.depth}</td>
+                      <td>
                         <button className="header-btn" style={{ minWidth: 0, fontWeight: 700 }} onClick={() => handleOpenEditModal(ship)}>Editar</button>
                       </td>
                     </tr>

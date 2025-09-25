@@ -118,13 +118,14 @@ module.exports = (pool) => {
 
     const client = await pool.connect();
     try {
-      const [shipRes, portRes, clientRes, linkedServicesRes, calculationsRes, remarksRes, pilotageTariffRes] = await Promise.all([
+      const [shipRes, portRes, clientRes, linkedServicesRes, calculationsRes, remarksRes] = await Promise.all([
         client.query('SELECT * FROM ships WHERE id = $1 AND company_id = $2', [ship_id, companyId]),
         client.query('SELECT * FROM ports WHERE id = $1 AND company_id = $2', [port_id, companyId]),
         client.query('SELECT * FROM clients WHERE id = $1 AND company_id = $2', [client_id, companyId]),
         client.query('SELECT service_id FROM port_services WHERE port_id = $1 AND company_id = $2', [port_id, companyId]),
-  client.query(`SELECT calc.*, s.name as service_name, s.is_taxable FROM calculations calc JOIN services s ON s.id = calc.service_id WHERE calc.port_id = $1 AND calc.company_id = $2`, [port_id, companyId]),
+        client.query(`SELECT calc.*, s.name as service_name FROM calculations calc JOIN services s ON s.id = calc.service_id WHERE calc.port_id = $1 AND calc.company_id = $2`, [port_id, companyId]),
         client.query('SELECT * FROM port_remarks WHERE port_id = $1 AND company_id = $2 ORDER BY display_order ASC', [port_id, companyId]),
+        // --- ADICIONE ESTA LINHA ---
         client.query('SELECT * FROM pilotage_tariffs WHERE port_id = $1 AND company_id = $2', [port_id, companyId])
       ]);
 
@@ -151,83 +152,13 @@ module.exports = (pool) => {
         '@TOTAL_CARGO': parseNumberSafe(totalCargo || 0),
         '@ROE': parseNumberSafe(roe || 0)
       };
-// COLE ESTE BLOCO DE CÓDIGO AQUI
 
-      // --- INÍCIO DA LÓGICA DE CÁLCULO DA PRATICAGEM ---
-      if (pilotageTariffRes && pilotageTariffRes.rows.length > 0) {
-        const tariff = pilotageTariffRes.rows[0];
-        const rangesRes = await client.query('SELECT * FROM pilotage_tariff_ranges WHERE tariff_id = $1 ORDER BY range_start ASC', [tariff.id]);
-        const ranges = rangesRes.rows;
-        
-        let basisValue = 0;
-        if (tariff.basis === 'DWT') {
-          basisValue = scope['@DWT'];
-        } else if (tariff.basis === 'GRT') {
-          basisValue = scope['@GRT'];
-        } else if (tariff.basis === 'PU' && tariff.pu_formula && isFormulaSafe(tariff.pu_formula)) {
-          try {
-            // Cria um escopo seguro para a fórmula PU sem o '@'
-            const scopeForPu = {};
-            Object.keys(scope).forEach(k => {
-              scopeForPu[k.replace('@','')] = scope[k];
-            });
-            basisValue = math.evaluate(tariff.pu_formula.toUpperCase().replace(/@/g, ''), scopeForPu);
-          } catch (e) {
-            console.error("Erro ao calcular PU da praticagem:", e);
-            basisValue = 0;
-          }
-        }
-
-        let pilotageValue = 0;
-        for (const range of ranges) {
-          if (basisValue >= parseNumberSafe(range.range_start) && basisValue <= parseNumberSafe(range.range_end)) {
-            pilotageValue = parseNumberSafe(range.value);
-            break;
-          }
-        }
-        
-        if (tariff.tag_name) {
-            const tagName = tariff.tag_name.startsWith('@') ? tariff.tag_name.toUpperCase() : `@${tariff.tag_name.toUpperCase()}`;
-            scope[tagName] = pilotageValue;
-        }
-      }
-      // --- FIM DA LÓGICA DE CÁLCULO DA PRATICAGEM ---
-
-// O código abaixo (const calculatedItems = [];) já existe no seu arquivo.
       const calculatedItems = [];
 
       for (const calc of calculations) {
         if (!linkedServiceIds.has(calc.service_id)) continue;
         let resultValue = 0;
         const method = (calc.calculation_method || '').toUpperCase();
-
-
-        // Remover @ dos nomes das variáveis para mathjs (declarar uma vez)
-        const safeScopeVars = {};
-        Object.keys(scope).forEach(k => {
-          const cleanKey = k.replace(/^@/, '');
-          safeScopeVars[cleanKey] = Number(scope[k]) || 0;
-        });
-
-        // Substituir vírgula por ponto e remover @ das variáveis na fórmula
-        let formulaToEval = (calc.formula || '').replace(/,/g, '.').replace(/@/g, '');
-
-        // Log para diagnóstico
-  console.log('--- Cálculo de item PDA ---');
-  console.log('Serviço:', calc.service_name);
-  console.log('Fórmula original:', calc.formula);
-  console.log('Fórmula original (unicode):', Array.from(calc.formula || '').map(c => c.charCodeAt(0)).join(','));
-  console.log('Fórmula final para avaliação:', formulaToEval);
-  console.log('Fórmula final (unicode):', Array.from(formulaToEval).map(c => c.charCodeAt(0)).join(','));
-  console.log('Método:', method);
-  console.log('Variáveis disponíveis:', safeScopeVars);
-
-        // Remover @ dos nomes das variáveis para mathjs
-        const safeScope = {};
-        Object.keys(scope).forEach(k => {
-          const cleanKey = k.replace(/^@/, '');
-          safeScope[cleanKey] = Number(scope[k]) || 0;
-        });
 
         if (method === 'FIXED') {
           resultValue = parseNumberSafe(calc.formula);
@@ -236,11 +167,14 @@ module.exports = (pool) => {
             console.error(`Fórmula bloqueada: ${calc.formula}`);
             resultValue = 0;
           } else {
+            const safeScope = {};
+            Object.keys(scope).forEach(k => { safeScope[k] = Number(scope[k]) || 0; });
+
             try {
-              const evalResult = math.evaluate(formulaToEval, safeScopeVars);
+              const evalResult = math.evaluate(calc.formula, safeScope);
               resultValue = parseNumberSafe(evalResult);
             } catch (e) {
-              console.error(`Erro fórmula: ${formulaToEval}`, e);
+              console.error(`Erro fórmula: ${calc.formula}`, e);
               resultValue = 0;
             }
           }
@@ -277,22 +211,7 @@ module.exports = (pool) => {
         }
 
         resultValue = parseNumberSafe(resultValue);
-        // Garante booleano mesmo se vier string ou null
-        let hasMunicipalTax = false;
-        if (typeof calc.is_taxable === 'boolean') {
-          hasMunicipalTax = calc.is_taxable;
-        } else if (typeof calc.is_taxable === 'string') {
-          hasMunicipalTax = calc.is_taxable === 'true' || calc.is_taxable === '1';
-        } else if (typeof calc.is_taxable === 'number') {
-          hasMunicipalTax = calc.is_taxable === 1;
-        }
-        console.log('Serviço:', calc.service_name, '| is_taxable:', calc.is_taxable, '| has_municipal_tax:', hasMunicipalTax);
-        calculatedItems.push({
-          service_name: calc.service_name,
-          value: resultValue,
-          currency: calc.currency,
-          has_municipal_tax: hasMunicipalTax
-        });
+        calculatedItems.push({ service_name: calc.service_name, value: resultValue, currency: calc.currency });
       }
 
       const responsePayload = { ship, port, client: selectedClient, roe, items: calculatedItems, remarks, pdaNumber, cargo, totalCargo, eta, etb, etd };

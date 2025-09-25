@@ -2,9 +2,29 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <!-- Custom favicon (coloque favicon.png e opcionalmente favicon.ico em /public) -->
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="shortcut icon" href="/favicon.png" />
+  <link rel="apple-touch-icon" href="/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React</title>
+    <title>SS PDA Systema 4.0</title>
+    <script>
+      // Rolling (marquee-like) title effect
+      (function(){
+  const base = ' SS PDA Systema 4.0 ';
+        let buffer = base + ' - ';
+        function tick(){
+          document.title = buffer;
+          buffer = buffer.slice(1) + buffer.charAt(0); // rotate
+          setTimeout(tick, 220); // speed
+        }
+        window.addEventListener('load', tick);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

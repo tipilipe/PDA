@@ -95,7 +95,7 @@ const PrintablePda = React.forwardRef(({ pdaResult, showBankDetails = true, show
   const invoiceTitle = `ESTIMATED PROFORMA INVOICE${pdaNumWithYear ? ' ' + pdaNumWithYear : ''}`;
 
   return (
-    <div ref={ref} style={{ fontFamily: 'Arial, sans-serif', color: '#000', fontSize: '9pt', width: '100%' }}>
+  <div ref={ref} className="printable-pda" style={{ fontFamily: 'Inter, Arial, sans-serif', color: '#000', fontSize: '9pt', width: '100%', boxSizing: 'border-box', margin: 0 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: '10px' }}>
         <div>
           <h1 style={{ margin: 0, color: '#004080', fontSize: '16pt' }}>{companyName}</h1>
@@ -118,7 +118,7 @@ const PrintablePda = React.forwardRef(({ pdaResult, showBankDetails = true, show
         </p>
       </div>
 
-      <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '15px', border: '1px solid black', fontSize: '9pt' }}>
+  <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '15px', border: '1px solid black', fontSize: '9pt', tableLayout: 'fixed' }}>
         <thead>
           <tr style={{ backgroundColor: '#f2f2f2', border: '1px solid black' }}>
             <th style={{ padding: '4px', border: '1px solid black' }}>PO</th>
@@ -142,7 +142,7 @@ const PrintablePda = React.forwardRef(({ pdaResult, showBankDetails = true, show
       </table>
 
       <h3 style={{ marginTop: '15px', marginBottom: '5px', fontSize: '10pt' }}>SERVICES DESCRIPTION</h3>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9pt' }}>
+  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9pt', tableLayout: 'fixed' }}>
         <thead>
           <tr style={{ borderBottom: '2px solid black' }}>
             <th style={{ padding: '4px', textAlign: 'left', width: '60%' }}>DESCRIPTION</th>
@@ -160,10 +160,10 @@ const PrintablePda = React.forwardRef(({ pdaResult, showBankDetails = true, show
           ))}
         </tbody>
         <tfoot>
-          <tr style={{ backgroundColor: '#333', color: 'white', fontWeight: 'bold' }}>
-            <td style={{ padding: '6px' }}>GRAND TOTAL</td>
-            {showBRL && <td style={{ padding: '6px', textAlign: 'right' }}>{formatPtBR(totalBRL)}</td>}
-            {showUSD && <td style={{ padding: '6px', textAlign: 'right' }}>{formatPtBR(totalUSD)}</td>}
+          <tr style={{ backgroundColor: 'transparent', color: '#000', fontWeight: 700, borderTop: '2px solid #000' }}>
+            <td style={{ padding: '8px 6px', fontWeight: 800, fontSize: '10pt', letterSpacing: '.5px' }}>GRAND TOTAL</td>
+            {showBRL && <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: 800, fontSize: '10pt' }}>{formatPtBR(totalBRL)}</td>}
+            {showUSD && <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: 800, fontSize: '10pt' }}>{formatPtBR(totalUSD)}</td>}
           </tr>
         </tfoot>
       </table>

@@ -88,10 +88,10 @@ function ServicePage() {
 
   return (
     <div style={{ background: 'var(--background-default, #181c24)', minHeight: '100vh', padding: '32px 0' }}>
-      <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px' }}>
-        <div className="card-action-area" style={{ background: '#fff', borderRadius: '18px', boxShadow: '0 2px 16px 0 rgba(0,0,0,0.10)', padding: '32px 32px 24px 32px', border: 'none', marginBottom: 0 }}>
-          <h2 style={{ margin: 0, fontWeight: 700, fontSize: '1.5rem', color: '#222' }}>Cadastrar Novo Serviço</h2>
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center', margin: '24px 0 0 0' }}>
+      <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px', padding: '0 20px', boxSizing:'border-box' }}>
+        <div className="app-card">
+          <h2 style={{ margin: 0, fontWeight: 700, fontSize: 'clamp(1.1rem,2vw+0.4rem,1.5rem)' }}>Cadastrar Novo Serviço</h2>
+          <form onSubmit={handleSubmit} className="app-form-grid" style={{ marginTop:24 }}>
             <input
               className="themed-input"
               type="text" name="name" placeholder="Nome do Serviço"
@@ -101,28 +101,30 @@ function ServicePage() {
               control={<Checkbox name="is_taxable" checked={newService.is_taxable} onChange={handleInputChange} />}
               label="Sujeito a Imposto Municipal"
             />
-            <button type="submit" className="header-btn" style={{ minWidth: 0, fontWeight: 700 }}>Cadastrar Serviço</button>
+            <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+              <button type="submit" className="header-btn" style={{ minWidth: 0, fontWeight: 700 }}>Cadastrar Serviço</button>
+            </div>
           </form>
         </div>
-        <div className="card-action-area" style={{ background: '#fff', borderRadius: '18px', boxShadow: '0 2px 16px 0 rgba(0,0,0,0.10)', padding: '32px 32px 24px 32px', border: 'none', marginBottom: 0 }}>
-          <h2 style={{ margin: 0, fontWeight: 700, fontSize: '1.5rem', color: '#222' }}>Lista de Serviços Cadastrados</h2>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, background: '#f8fafd', borderRadius: '10px', boxShadow: '0 1px 4px 0 rgba(0,0,0,0.04)' }}>
+        <div className="app-card">
+          <h2 style={{ margin: 0, fontWeight: 700, fontSize: 'clamp(1.1rem,2vw+0.4rem,1.5rem)' }}>Lista de Serviços Cadastrados</h2>
+          <div className="table-responsive" style={{ marginTop:24 }}>
+            <table className="table-basic">
               <thead>
-                <tr style={{ background: '#e3eafc' }}>
-                  <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>ID</th>
-                  <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>Nome</th>
-                  <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>Imposto Municipal?</th>
-                  <th style={{ padding: '10px 8px', fontWeight: 600, color: '#222' }}>Ações</th>
+                <tr>
+                  <th>ID</th>
+                  <th>Nome</th>
+                  <th>Imposto Municipal?</th>
+                  <th>Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {services.map((service) => (
                   <tr key={service.id}>
-                    <td style={{ padding: '10px 8px', fontWeight: 500, color: '#222' }}>{service.id}</td>
-                    <td style={{ padding: '10px 8px', fontWeight: 500, color: '#222' }}>{service.name}</td>
-                    <td style={{ padding: '10px 8px', fontWeight: 500, color: '#222' }}>{service.is_taxable ? 'Sim' : 'Não'}</td>
-                    <td style={{ padding: '10px 8px' }}>
+                    <td>{service.id}</td>
+                    <td>{service.name}</td>
+                    <td>{service.is_taxable ? 'Sim' : 'Não'}</td>
+                    <td>
                       <button className="header-btn" style={{ minWidth: 0, fontWeight: 700 }} onClick={() => handleOpenEditModal(service)}>Editar</button>
                     </td>
                   </tr>

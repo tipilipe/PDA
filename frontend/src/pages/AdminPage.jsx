@@ -262,19 +262,17 @@ const AdminPage = () => {
 	return (
 		<div>
 			{/* Cadastro de usuário */}
-			<div className="themed-section" style={{ padding: 16 }}>
-				<h2 style={{ marginTop: 0 }}>Cadastrar Novo Usuário</h2>
-				<form onSubmit={submitUser} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+			<div className="themed-section">
+				<h2 className="admin-section-title">Cadastrar Novo Usuário</h2>
+				<form onSubmit={submitUser} className="admin-user-create-form">
 					<input className="themed-input" placeholder="Nome" value={userForm.name} onChange={e => setUserForm({ ...userForm, name: e.target.value })} />
 					<input className="themed-input" placeholder="Email" value={userForm.email} onChange={e => setUserForm({ ...userForm, email: e.target.value })} />
 					<input className="themed-input" placeholder="Senha" type="password" value={userForm.password} onChange={e => setUserForm({ ...userForm, password: e.target.value })} />
 					<select className="themed-input" value={userForm.companyId} onChange={e => setUserForm({ ...userForm, companyId: e.target.value })}>
 						<option value="">Selecione a empresa</option>
-						{companies.map(c => (
-							<option key={c.id} value={c.id}>{c.name}</option>
-						))}
+						{companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
 					</select>
-					<label style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+					<label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom:8 }}>
 						<input type="checkbox" checked={userForm.isAdmin} onChange={e => setUserForm({ ...userForm, isAdmin: e.target.checked })} />
 						Administrador
 					</label>
@@ -284,37 +282,41 @@ const AdminPage = () => {
 			</div>
 
 			{/* Lista e detalhes */}
-			<div className="themed-section" style={{ padding: 16 }}>
-				<div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 24 }}>
+			<div className="themed-section">
+				<div className="admin-panels">
 					<div>
-						<h3 style={{ marginTop: 0 }}>Usuários do Sistema</h3>
+						<h3 className="admin-section-title">Usuários do Sistema</h3>
 						<div style={{ borderTop: '1px solid #3a4662', marginTop: 8, paddingTop: 8 }} />
-						<div>
-							{users.map(u => (
-								<div key={u.id} onClick={() => { setSelectedUser(u); loadUserSettings(u.id); setLinkCompanyId(u.company_id ? String(u.company_id) : ''); }}
-										 style={{ padding: 10, borderRadius: 8, marginBottom: 8, cursor: 'pointer', background: selectedUser?.id === u.id ? '#2c3650' : 'transparent' }}>
-									<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-										<div>
-											<div style={{ fontWeight: 700 }}>{u.name}</div>
-											<div style={{ opacity: .8, fontSize: 12 }}>{u.email}</div>
-											<div style={{ opacity: .6, fontSize: 12 }}>Empresa: {u.company_name || 'Sem empresa'}</div>
+						<div className="admin-user-list">
+							{users.map(u => {
+								const active = selectedUser?.id === u.id;
+								return (
+									<div key={u.id}
+										className={`admin-user-item ${active ? 'is-active' : ''}`}
+										onClick={() => { setSelectedUser(u); loadUserSettings(u.id); setLinkCompanyId(u.company_id ? String(u.company_id) : ''); }}>
+										<div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:12 }}>
+											<div>
+												<div className="admin-user-item-name">{u.name}</div>
+												<div className="meta">{u.email}</div>
+												<div className="meta2">Empresa: {u.company_name || 'Sem empresa'}</div>
+											</div>
+											{u.role?.toLowerCase() === 'admin' && <span className="btn btn-outline-danger" style={{ padding: '2px 8px', fontSize:11 }}>Admin</span>}
 										</div>
-										{u.role?.toLowerCase() === 'admin' && <span className="btn btn-outline-danger" style={{ padding: '2px 8px' }}>Admin</span>}
 									</div>
-								</div>
-							))}
+								);
+							})}
 						</div>
 					</div>
 					<div>
-						<h3 style={{ marginTop: 0 }}>Detalhes do Usuário</h3>
+						<h3 className="admin-section-title">Detalhes do Usuário</h3>
 						{!selectedUser ? (
-							<div>Selecione um usuário para ver detalhes e permissões.</div>
+							<div style={{ opacity:.8 }}>Selecione um usuário para ver detalhes e permissões.</div>
 						) : (
 							<div>
-								<div style={{ marginBottom: 8 }}>
-									<div><strong>Nome:</strong> <input className="themed-input" value={selectedUser.name} onChange={e => setSelectedUser({ ...selectedUser, name: e.target.value })} /></div>
-									<div><strong>Email:</strong> {selectedUser.email}</div>
-									<div><strong>Admin:</strong> <input type="checkbox" checked={!!userSettings?.is_admin} onChange={e => setUserSettings({ ...(userSettings || {}), is_admin: e.target.checked })} /></div>
+								<div style={{ marginBottom: 12, display:'flex', flexWrap:'wrap', gap:16 }}>
+									<div><strong>Nome:</strong><br /><input className="themed-input" value={selectedUser.name} onChange={e => setSelectedUser({ ...selectedUser, name: e.target.value })} /></div>
+									<div><strong>Email:</strong><br />{selectedUser.email}</div>
+									<div style={{ display:'flex', alignItems:'center', gap:6 }}><strong>Admin:</strong> <input type="checkbox" checked={!!userSettings?.is_admin} onChange={e => setUserSettings({ ...(userSettings || {}), is_admin: e.target.checked })} /></div>
 								</div>
 								<div style={{ margin: '12px 0' }}>
 									<div style={{ fontWeight: 700, marginBottom: 6 }}>Métricas</div>
@@ -322,9 +324,9 @@ const AdminPage = () => {
 								</div>
 								<div style={{ margin: '12px 0' }}>
 									<div style={{ fontWeight: 700, marginBottom: 8 }}>Permissões de Abas</div>
-									<div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+									<div className="admin-perms">
 										{ALL_TABS.map(tab => (
-											<label key={tab.key} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+											<label key={tab.key} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize:13 }}>
 												<input type="checkbox" checked={userSettings?.visible_tabs?.[tab.key] === true} onChange={() => toggleTab(tab.key)} />
 												{tab.label}
 											</label>
@@ -341,25 +343,23 @@ const AdminPage = () => {
 											return <>Atual: {name || 'Não vinculada'}</>;
 										})()}
 									</div>
-									<div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+									<div className="admin-inline-form" style={{ marginTop:4 }}>
 										<select className="themed-input" value={linkCompanyId} onChange={e => setLinkCompanyId(e.target.value)}>
 											<option value="">Selecione uma empresa</option>
-											{companies.map(c => (
-												<option key={c.id} value={c.id}>{c.name}</option>
-											))}
+											{companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
 										</select>
 										<button className="btn btn-secondary" onClick={linkCompany} disabled={!linkCompanyId}>Vincular</button>
 									</div>
 								</div>
-								<div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+								<div className="admin-actions">
 									<button className="btn btn-primary" onClick={liberatePassword}>Liberar alteração de senha</button>
 									<button className="btn btn-primary" style={{ background: '#6f42c1', borderColor: '#6f42c1' }} onClick={liberateCompanyNameEdit}>Liberar edição do nome</button>
 									<button className="btn btn-outline-primary" onClick={saveTabs}>Salvar abas</button>
 									<button className="btn btn-secondary" onClick={editUser} disabled={loading}>Editar usuário</button>
 									<button className="btn btn-outline-danger" onClick={deleteUser} disabled={loading}>Excluir usuário</button>
 								</div>
-								<div style={{ marginTop: 10 }}>
-									<div style={{ fontWeight: 700, marginBottom: 6 }}>Redefinir senha (admin)</div>
+								<div className="admin-reset">
+									<div style={{ fontWeight: 700, width:'100%' }}>Redefinir senha (admin)</div>
 									<input className="themed-input" type="password" placeholder="Nova senha" value={newPassword} onChange={e => setNewPassword(e.target.value)} />
 									<input className="themed-input" type="password" placeholder="Confirmar senha" value={newPassword2} onChange={e => setNewPassword2(e.target.value)} />
 									<button className="btn btn-danger" onClick={adminResetPassword} disabled={loading || !newPassword || newPassword !== newPassword2}>Salvar nova senha</button>
@@ -371,9 +371,9 @@ const AdminPage = () => {
 			</div>
 
 			{/* Cadastro de Empresas */}
-			<div className="themed-section" style={{ padding: 16 }}>
-				<h3 style={{ marginTop: 0 }}>Cadastro de Empresas</h3>
-				<form onSubmit={submitCompany} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+			<div className="themed-section">
+				<h3 className="admin-section-title">Cadastro de Empresas</h3>
+				<form onSubmit={submitCompany} className="admin-company-create-form">
 					<input className="themed-input" placeholder="Nome" value={companyForm.name} onChange={e => setCompanyForm({ ...companyForm, name: e.target.value })} />
 					<input className="themed-input" placeholder="Endereço" value={companyForm.address} onChange={e => setCompanyForm({ ...companyForm, address: e.target.value })} />
 					<input className="themed-input" placeholder="CNPJ" value={companyForm.cnpj} onChange={e => setCompanyForm({ ...companyForm, cnpj: e.target.value })} />
@@ -384,9 +384,11 @@ const AdminPage = () => {
 					<ul style={{ margin: 0, paddingLeft: 18 }}>
 						{companies.map(c => (
 							<li key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-								<span>{c.name} {c.cnpj ? `- ${c.cnpj}` : ''} {c.active === false ? '(desativada)' : ''}</span>
 								<button className="btn btn-outline-warning" onClick={() => deactivateCompany(c.id)} disabled={loading}>Desativar</button>
 								<button className="btn btn-outline-danger" onClick={() => deleteCompany(c.id)} disabled={loading}>Excluir</button>
+								<span style={{ flex: 1 }}>
+									{c.name} {c.cnpj ? `- ${c.cnpj}` : ''} {c.active === false ? '(desativada)' : ''}
+								</span>
 							</li>
 						))}
 					</ul>

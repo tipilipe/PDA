@@ -38,16 +38,26 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    const loadSelfSettings = async () => {
+    const loadSettingsAndCompany = async () => {
       if (!user?.token) return;
       try {
-  const { data } = await axios.get(`${API_BASE}/api/admin/self/settings`);
-        setSettings(data);
+        const [selfSettingsRes, profileRes] = await Promise.all([
+          axios.get(`${API_BASE}/api/admin/self/settings`).catch(()=>({ data:null })),
+          axios.get(`${API_BASE}/api/company/profile`).catch(()=>({ data:null }))
+        ]);
+        const merged = { ...(selfSettingsRes.data || {}), ...(profileRes.data || {}) };
+        // Normaliza para facilitar: coloca companyName e companyAcronym se possível
+        if (merged.company && !merged.companyName) merged.companyName = merged.company.name;
+        if (merged.company && !merged.companyAcronym) {
+          const c = merged.company;
+            merged.companyAcronym = c.acronym || c.sigla || c.abbr || c.code || c.shortName || '';
+        }
+        setSettings(merged);
       } catch (e) {
         setSettings(null);
       }
     };
-    loadSelfSettings();
+    loadSettingsAndCompany();
   }, [user?.token]);
 
   const login = async (email, password) => {

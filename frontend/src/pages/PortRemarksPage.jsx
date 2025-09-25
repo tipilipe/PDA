@@ -60,10 +60,10 @@ function PortRemarksPage() {
 
   return (
     <div className="no-print" style={{ background: 'var(--background-default, #181c24)', minHeight: '100vh', padding: '32px 0' }}>
-      <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px' }}>
-        <div className="card-action-area" style={{ background: '#fff', borderRadius: '18px', boxShadow: '0 2px 16px 0 rgba(0,0,0,0.10)', padding: '32px 32px 24px 32px', border: 'none' }}>
-          <h2 style={{ margin: 0, fontWeight: 700, fontSize: '1.5rem', color: '#222' }}>Gerenciar Observações Padrão por Porto</h2>
-          <select className="themed-input" value={selectedPortId} onChange={(e) => setSelectedPortId(e.target.value)} style={{ margin: '24px 0 0 0' }}>
+      <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px', padding:'0 20px', boxSizing:'border-box' }}>
+        <div className="app-card">
+          <h2 style={{ margin: 0, fontWeight: 700, fontSize: 'clamp(1.1rem,2vw+0.4rem,1.6rem)' }}>Gerenciar Observações Padrão por Porto</h2>
+          <select className="themed-input" value={selectedPortId} onChange={(e) => setSelectedPortId(e.target.value)} style={{ marginTop:24 }}>
             <option value="">-- Selecione um Porto --</option>
             {ports.map(p => (
               <option key={p.id} value={p.id}>{`${p.name} - ${p.terminal} - ${p.berth}`}</option>
@@ -73,13 +73,13 @@ function PortRemarksPage() {
           {selectedPortId && (
             <div style={{ marginTop: '24px' }}>
               {remarks.map((remark, index) => (
-                <div key={index} style={{ marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div key={index} style={{ marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap:'wrap' }}>
                   <textarea
                     value={remark.remark_text}
                     onChange={(e) => handleRemarkChange(index, e.target.value)}
                     rows="3"
                     className="themed-input"
-                    style={{ width: '80%', minHeight: '60px', marginRight: 0, resize: 'vertical', fontSize: '1rem', borderRadius: '8px', padding: '8px' }}
+                    style={{ flex:'1 1 520px', minHeight: '60px', marginRight: 0, resize: 'vertical', fontSize: '1rem', borderRadius: '8px', padding: '8px', minWidth:260 }}
                   />
                   <button className="header-btn" style={{ minWidth: 0, fontWeight: 700, color: 'red', background: 'transparent' }} onClick={() => handleRemoveRemark(index)}>Remover</button>
                 </div>

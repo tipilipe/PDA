@@ -95,10 +95,10 @@ function ProfilePage() {
 
   return (
     <div style={{ background: 'var(--background-default, #181c24)', minHeight: '100vh', padding: '32px 0' }}>
-      <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px' }}>
-        <div className="card-action-area" style={{ background: '#fff', borderRadius: '18px', boxShadow: '0 2px 16px 0 rgba(0,0,0,0.10)', padding: '32px 32px 24px 32px', border: 'none', marginBottom: 0 }}>
+      <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px', padding:'0 20px', boxSizing:'border-box' }}>
+        <div className="app-card">
           <form onSubmit={handleSubmit}>
-            <Typography variant="h4" gutterBottom style={{ color: '#222', fontWeight: 700 }}>Perfil da Empresa e Usuário</Typography>
+            <Typography variant="h4" gutterBottom style={{ color: '#222', fontWeight: 700, fontSize:'clamp(1.3rem,2.2vw+0.5rem,2rem)' }}>Perfil da Empresa e Usuário</Typography>
             <Paper sx={{ p: 2, mb: 3 }}>
               <Typography variant="h6" gutterBottom>Dados da Empresa</Typography>
               <Grid container spacing={2}>

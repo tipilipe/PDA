@@ -78,25 +78,28 @@ function ClientsPage() {
 
   return (
     <div className="no-print" style={{ background: 'var(--background-default, #181c24)', minHeight: '100vh', padding: '32px 0' }}>
-      <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px' }}>
-        <div className="card-action-area" style={{ background: '#fff', borderRadius: '18px', boxShadow: '0 2px 16px 0 rgba(0,0,0,0.10)', padding: '32px 32px 24px 32px', border: 'none' }}>
-          <h2 style={{ margin: 0, fontWeight: 700, fontSize: '1.5rem', color: '#222' }}>Cadastrar Novo Cliente</h2>
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '20px' }}>
+      <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px', padding: '0 20px', boxSizing:'border-box' }}>
+        <div className="app-card">
+          <h2 style={{ margin: 0, fontWeight: 700, fontSize: 'clamp(1.1rem,2vw+0.4rem,1.5rem)' }}>Cadastrar Novo Cliente</h2>
+          <form onSubmit={handleSubmit} className="app-form-grid" style={{ marginTop:24 }}>
             <input type="text" name="name" placeholder="Nome *" value={newClient.name} onChange={handleInputChange} required />
             <input type="text" name="po_number" placeholder="PO Number" value={newClient.po_number} onChange={handleInputChange} />
             <input type="text" name="vat_number" placeholder="VAT Number" value={newClient.vat_number} onChange={handleInputChange} />
             <input type="text" name="address" placeholder="Endereço" value={newClient.address} onChange={handleInputChange} />
             <input type="text" name="remark" placeholder="Observação" value={newClient.remark} onChange={handleInputChange} />
-            <button type="submit" className="header-btn">Cadastrar Cliente</button>
+            <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+              <button type="submit" className="header-btn">Cadastrar Cliente</button>
+            </div>
           </form>
-          <hr />
-          <h2>Lista de Clientes Cadastrados</h2>
+          <hr style={{ margin:'28px 0 20px' }} />
+          <h2 style={{ marginTop:0, fontSize: 'clamp(1rem,2vw+0.3rem,1.35rem)' }}>Lista de Clientes Cadastrados</h2>
           {loading && <div>Carregando...</div>}
           {error && <div style={{ color: 'red' }}>{error}</div>}
           {!loading && !error && (
-            <table style={{ width: '100%', borderCollapse: 'collapse', background: '#f8fafd', borderRadius: '10px', boxShadow: '0 1px 4px 0 rgba(0,0,0,0.04)' }}>
+            <div className="table-responsive">
+              <table className="table-basic">
               <thead>
-                <tr style={{ background: '#e3eafc' }}>
+                <tr>
                   <th>ID</th><th>Nome</th><th>PO Number</th><th>VAT Number</th>
                   <th>Endereço</th><th>Observação</th><th>Ações</th>
                 </tr>
@@ -112,7 +115,8 @@ function ClientsPage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+              </table>
+            </div>
           )}
 
           <Modal open={isModalOpen} onClose={handleCloseEditModal}>
