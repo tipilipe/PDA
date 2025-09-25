@@ -127,3 +127,11 @@ module.exports = (pool) => {
 
   return router;
 };
+
+// Rota utilitária fora do factory (evita necessidade de pool)
+module.exports.meRoute = (app) => {
+  const { protect } = require('../middleware/authMiddleware');
+  app.get('/api/auth/me', protect, (req, res) => {
+    res.json({ ok: true, user: req.user });
+  });
+};

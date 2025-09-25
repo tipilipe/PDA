@@ -38,6 +38,28 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
+  // Intercepta 401 globalmente para evitar estado de sessão "meio logado"
+  useEffect(() => {
+    const id = axios.interceptors.response.use(
+      (resp) => resp,
+      (error) => {
+        const status = error?.response?.status;
+        const url = error?.config?.url || '';
+        // Não derruba a sessão em erros da IA; o componente mostra mensagem e o usuário não é chutado
+        const isAiRoute = url.includes('/api/ai/');
+        if (status === 401 && !isAiRoute) {
+          try { localStorage.removeItem('pda_token'); } catch {}
+          delete axios.defaults.headers.common['Authorization'];
+          setUser(null);
+          setSettings(null);
+          try { window.location.assign('/login'); } catch {}
+        }
+        return Promise.reject(error);
+      }
+    );
+    return () => axios.interceptors.response.eject(id);
+  }, []);
+
   useEffect(() => {
     const loadSettingsAndCompany = async () => {
       if (!user?.token) return;

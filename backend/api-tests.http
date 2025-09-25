@@ -43,3 +43,22 @@ Content-Type: application/json
   "email": "filipe@empresateste.com",
   "password": "senhaSegura123"
 }
+
+### SEPARADOR
+###
+
+### Teste do token atual (/api/auth/me) — substitua <TOKEN>
+GET http://localhost:3001/api/auth/me
+Authorization: Bearer <TOKEN>
+
+### SEPARADOR
+###
+
+### Teste AI OCR (mock desligado) — substitua <TOKEN>
+POST http://localhost:3001/api/ai/vessel/ocr
+Authorization: Bearer <TOKEN>
+Content-Type: application/json
+
+{
+  "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/Container_ship.jpg/640px-Container_ship.jpg"
+}

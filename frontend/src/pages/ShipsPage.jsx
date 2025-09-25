@@ -4,6 +4,7 @@ import axios from 'axios';
 import { API_BASE } from '../config';
 // --- Typography adicionado na linha de import abaixo ---
 import { Modal, Box, TextField, Button, Typography } from '@mui/material';
+import VesselOcrImport from '../components/VesselOcrImport';
 
 // Estilo para o Modal (pop-up)
 const style = {
@@ -69,6 +70,18 @@ function ShipsPage() {
     }
   };
 
+  // Aplica valores sugeridos pela IA, preservando os já preenchidos
+  const handleApplyOcr = (suggested) => {
+    const merged = { ...newShip };
+    for (const k of Object.keys(initialFormState)) {
+      const v = suggested?.[k];
+      if ((merged[k] === '' || merged[k] === null || merged[k] === undefined) && v !== undefined && v !== null && v !== '') {
+        merged[k] = v;
+      }
+    }
+    setNewShip(merged);
+  };
+
   const handleOpenEditModal = (ship) => {
     setEditingShip(ship);
     setIsModalOpen(true);
@@ -112,13 +125,21 @@ function ShipsPage() {
             <input className="themed-input" type="number" name="dwt" placeholder="DWT" value={newShip.dwt} onChange={handleInputChange} />
             <input className="themed-input" type="number" name="grt" placeholder="GRT" value={newShip.grt} onChange={handleInputChange} />
             <input className="themed-input" type="number" name="net" placeholder="NET" value={newShip.net} onChange={handleInputChange} />
+            <input className="themed-input" type="number" name="depth" placeholder="DEPTH (Pontal)" value={newShip.depth} onChange={handleInputChange} />
             <input className="themed-input" type="number" name="loa" placeholder="LOA (Comprimento)" value={newShip.loa} onChange={handleInputChange} />
             <input className="themed-input" type="number" name="beam" placeholder="BEAM (Boca)" value={newShip.beam} onChange={handleInputChange} />
             <input className="themed-input" type="number" name="draft" placeholder="DRAFT (Calado)" value={newShip.draft} onChange={handleInputChange} />
-            <input className="themed-input" type="number" name="depth" placeholder="DEPTH (Pontal)" value={newShip.depth} onChange={handleInputChange} />
-            <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-              <button type="submit" className="header-btn" style={{ minWidth: 0, fontWeight: 700 }}>Cadastrar Navio</button>
-            </div>
+            {(((import.meta.env.VITE_AI_SHIPS + '') === '1') || ((import.meta.env.VITE_AI_SHIPS + '') === 'true') || (typeof window !== 'undefined' && window.__AI_SHIPS__ === true)) && (
+              <div style={{ gridColumn: '1 / -1', display:'flex', alignItems:'center', gap:12, justifyContent:'flex-end' }}>
+                <VesselOcrImport onApply={handleApplyOcr} />
+                <button type="submit" className="header-btn" style={{ minWidth: 0, fontWeight: 700 }}>Cadastrar Navio</button>
+              </div>
+            )}
+            {(!(((import.meta.env.VITE_AI_SHIPS + '') === '1') || ((import.meta.env.VITE_AI_SHIPS + '') === 'true') || (typeof window !== 'undefined' && window.__AI_SHIPS__ === true))) && (
+              <div style={{ gridColumn: '1 / -1', display:'flex', alignItems:'center', gap:12, justifyContent:'flex-end' }}>
+                <button type="submit" className="header-btn" style={{ minWidth: 0, fontWeight: 700 }}>Cadastrar Navio</button>
+              </div>
+            )}
           </form>
         </div>
         <div className="app-card">

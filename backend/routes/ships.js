@@ -4,6 +4,41 @@ const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
 
 module.exports = (pool) => {
+  // Helpers to sanitize inputs coming from forms (often as empty strings)
+  const toIntOrNull = (v) => {
+    if (v === undefined || v === null) return null;
+    let s = String(v).trim();
+    if (s === '') return null;
+    // remove thousands separators and spaces
+    s = s.replace(/[.,\s]/g, '');
+    const n = parseInt(s, 10);
+    return Number.isNaN(n) ? null : n;
+  };
+
+  const toFloatOrNull = (v) => {
+    if (v === undefined || v === null) return null;
+    let s = String(v).trim();
+    if (s === '') return null;
+    // Normalize decimal separators: if both . and , exist -> comma is decimal, remove dots
+    if (s.includes('.') && s.includes(',')) {
+      s = s.replace(/\./g, '');
+      s = s.replace(',', '.');
+    } else if (s.includes(',')) {
+      // Only comma present: use as decimal
+      s = s.replace(',', '.');
+    }
+    // Remove spaces
+    s = s.replace(/\s/g, '');
+    const n = parseFloat(s);
+    return Number.isNaN(n) ? null : n;
+  };
+
+  const trimOrNull = (v) => {
+    if (v === undefined || v === null) return null;
+    const s = String(v).trim();
+    return s === '' ? null : s;
+  };
+
   // Rota GET (sem alterações)
   router.get('/', protect, async (req, res) => {
     const companyId = req.user.companyId;
@@ -20,11 +55,25 @@ module.exports = (pool) => {
   router.post('/', protect, async (req, res) => {
     const companyId = req.user.companyId;
     const { name, imo, dwt, grt, net, loa, beam, draft, depth, flag, year } = req.body;
-    if (!name) { return res.status(400).json({ error: 'O nome do navio é obrigatório.' }); }
+    const nameTrimmed = String(name || '').trim();
+    if (!nameTrimmed) { return res.status(400).json({ error: 'O nome do navio é obrigatório.' }); }
     const queryText = `
       INSERT INTO ships (name, imo, dwt, grt, net, loa, beam, draft, depth, flag, year, company_id) 
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`;
-    const values = [name, imo, dwt, grt, net, loa, beam, draft, depth, flag, year, companyId];
+    const values = [
+      nameTrimmed,
+      trimOrNull(imo),
+      toIntOrNull(dwt),
+      toIntOrNull(grt),
+      toIntOrNull(net),
+      toFloatOrNull(loa),
+      toFloatOrNull(beam),
+      toFloatOrNull(draft),
+      toFloatOrNull(depth),
+      trimOrNull(flag),
+      toIntOrNull(year),
+      companyId
+    ];
     try {
       const result = await pool.query(queryText, values);
       res.status(201).json(result.rows[0]);
@@ -47,7 +96,23 @@ module.exports = (pool) => {
       WHERE id = $12 AND company_id = $13
       RETURNING *;
     `;
-    const values = [name, imo, dwt, grt, net, loa, beam, draft, depth, flag, year, id, companyId];
+    const nameTrimmed = String(name || '').trim();
+    if (!nameTrimmed) { return res.status(400).json({ error: 'O nome do navio é obrigatório.' }); }
+    const values = [
+      nameTrimmed,
+      trimOrNull(imo),
+      toIntOrNull(dwt),
+      toIntOrNull(grt),
+      toIntOrNull(net),
+      toFloatOrNull(loa),
+      toFloatOrNull(beam),
+      toFloatOrNull(draft),
+      toFloatOrNull(depth),
+      trimOrNull(flag),
+      toIntOrNull(year),
+      id,
+      companyId
+    ];
 
     try {
       const result = await pool.query(queryText, values);
