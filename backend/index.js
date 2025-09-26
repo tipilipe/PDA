@@ -8,8 +8,8 @@ require('dotenv').config({ path: require('path').join(__dirname, '.env'), overri
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: '4mb' }));
-app.use(express.urlencoded({ extended: true, limit: '4mb' }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 
 function buildConnFromPgPieces() {
@@ -126,8 +126,16 @@ app.use('/api/admin', adminRoutes);
 const companiesAdminRoutes = require('./routes/companyAdmin')(pool);
 app.use('/api/companies', companiesAdminRoutes);
 
-// Rota de IA (opt-in via AI_SHIPS=1 no .env)
-if (process.env.AI_SHIPS === '1' || process.env.AI_SHIPS === 'true') {
+// Rota de IA (habilita se AI_SHIPS=1/true ou se houver chave do provedor configurada)
+const aiEnabled = (() => {
+  const flag = process.env.AI_SHIPS;
+  if (typeof flag === 'string' && ['1','true','yes','on'].includes(flag.toLowerCase())) return true;
+  const provider = (process.env.AI_PROVIDER || '').toLowerCase();
+  if (provider === 'openrouter' && process.env.OPENROUTER_API_KEY) return true;
+  if (provider === 'openai' && process.env.OPENAI_API_KEY) return true;
+  return false;
+})();
+if (aiEnabled) {
   try {
     const aiVesselRoutes = require('./routes/aiVessel')();
     app.use('/api/ai/vessel', aiVesselRoutes);
@@ -145,6 +153,8 @@ if (process.env.AI_SHIPS === '1' || process.env.AI_SHIPS === 'true') {
   } catch (e) {
     console.error('[ai] Falha ao inicializar rota /api/ai/vessel:', e.message);
   }
+} else {
+  console.log('[ai] Rota /api/ai/vessel desabilitada. Defina AI_SHIPS=1 ou configure AI_PROVIDER e a respectiva API key.');
 }
 
 // Health check (inclui teste simples no banco)

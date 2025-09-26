@@ -1,5 +1,7 @@
 // backend/routes/aiVessel.js
 const express = require('express');
+const multer = require('multer');
+const sharp = require('sharp');
 const crypto = require('crypto');
 const { protect } = require('../middleware/authMiddleware');
 const undici = require('undici');
@@ -41,6 +43,7 @@ function allow(userId) {
 
 function routerFactory() {
   const router = express.Router();
+  const upload = multer({ limits: { fileSize: 5 * 1024 * 1024 } }); // 5MB
   router.get('/ping', (req, res) => res.json({ ok: true, route: 'ai/vessel' }));
 
   // Resultado em cache por 10 minutos para a mesma imagem (data URL ou URL)
@@ -447,6 +450,32 @@ function routerFactory() {
         if (code) body.code = code;
       }
       return res.status(status).json(body);
+    }
+  });
+
+  // Alternativa: upload multipart com resize server-side para reduzir payload
+  router.post('/upload', protect, upload.single('image'), async (req, res) => {
+    try {
+      if (!req.file) return res.status(400).json({ error: 'Arquivo de imagem ausente.' });
+      // Redimensiona para largura máxima 1600px, mantém proporção, converte para JPEG qualidade 80
+      const buf = await sharp(req.file.buffer)
+        .rotate()
+        .resize({ width: 1600, withoutEnlargement: true })
+        .jpeg({ quality: 80 })
+        .toBuffer();
+      const dataUrl = `data:image/jpeg;base64,${buf.toString('base64')}`;
+      req.body = { imageDataUrl: dataUrl };
+      // Reutiliza a lógica do /ocr sem duplicar código: chama handler acima indiretamente
+      // Para isso, podemos simplesmente retornar a mesma função utilitária
+      // mas aqui vamos responder chamando o provider novamente de forma direta
+      // Simplificação: reaproveitar fetch do provider com dataUrl
+
+      // Pequeno truque: encamina internamente para /ocr
+      req.url = '/ocr';
+      return router.handle(req, res);
+    } catch (e) {
+      console.error('Falha no upload/resize de imagem:', e);
+      return res.status(500).json({ error: 'Falha ao processar imagem enviada.' });
     }
   });
 
