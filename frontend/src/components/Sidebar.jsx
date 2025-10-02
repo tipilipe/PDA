@@ -7,8 +7,8 @@ export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
   const perms = settings?.visible_tabs || {};
   // Mapeia chaves de permissionamento -> rota
   const baseItems = [
-    { key:'pda', to: '/pda', label: 'PDA' },
-    { key:'dashboard', to: '/dashboard', label: 'Dashboard' }, // se quiser controlar depois incluir em ALL_TABS
+    { key:'dashboard', to: '/dashboard', label: 'Dashboard' },
+  { key:'pda', to: '/pda', label: 'PDA' },
     { key:'ships', to: '/ships', label: 'Navios' },
     { key:'clients', to: '/clients', label: 'Clientes' },
     { key:'ports', to: '/ports', label: 'Portos' },

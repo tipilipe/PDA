@@ -146,7 +146,7 @@ export default function VesselOcrImport({ onApply }) {
           setError('Muitas solicitações para IA. Tente novamente em alguns segundos.');
         }
         // Auto-retry uma vez para rate local, se a espera for curta (<= 15s)
-        if (code === 'local_rate' && Number.isFinite(retryAfter) && retryAfter > 0 && retryAfter <= 15 && !autoRetryRef.current) {
+        if ((code === 'local_rate' || code === 'upstream_rate') && Number.isFinite(retryAfter) && retryAfter > 0 && retryAfter <= 15 && !autoRetryRef.current) {
           autoRetryRef.current = true;
           setCooldownSec(retryAfter);
           const interval = setInterval(() => {
@@ -215,7 +215,7 @@ export default function VesselOcrImport({ onApply }) {
       {error && (
         <span style={{ color:'salmon' }}>
           {error} {String(error).includes('Sessão não autorizada') && (
-            <a href="/login" style={{ color:'#1976d2', marginLeft: 6 }}>Fazer login</a>
+            <a href="login" style={{ color:'#1976d2', marginLeft: 6 }}>Fazer login</a>
           )}
         </span>
       )}

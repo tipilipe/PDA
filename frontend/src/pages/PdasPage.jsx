@@ -48,15 +48,35 @@ function PdasPage() {
   // Ordem fixa para taxas e utilitários
   const TAX_ORDER = [TAX_LABELS.municipal, TAX_LABELS.bank, TAX_LABELS.federal];
   const isTaxNameGlobal = (name) => TAX_ORDER.includes(String(name || '').trim().toUpperCase());
+  // Ordena os itens da PDA conforme a ordem dos serviços vinculados ao porto
   const orderItemsWithTaxesStable = (items) => {
+    // Busca a ordem dos serviços vinculados ao porto selecionado
+    let linkedServiceOrder = [];
+    if (selectedPortId && Array.isArray(allServices) && allServices.length > 0) {
+      // allServices contém todos os serviços, mas precisamos da ordem dos vinculados
+      // A ordem dos vinculados está em port_services, mas aqui não está disponível diretamente
+      // Então usamos a ordem dos serviços que aparecem em items (que vieram do backend já filtrados)
+      linkedServiceOrder = items
+        .filter(it => it.service_name && !TAX_ORDER.includes(String(it.service_name).trim().toUpperCase()))
+        .map(it => String(it.service_name).trim().toUpperCase());
+    }
     const base = [];
     const map = new Map();
     for (const it of items) {
       const lbl = String(it.service_name || '').trim().toUpperCase();
       if (TAX_ORDER.includes(lbl)) map.set(lbl, it); else base.push(it);
     }
+    // Ordena base conforme linkedServiceOrder
+    let orderedBase = base;
+    if (linkedServiceOrder.length > 0) {
+      orderedBase = [...base].sort((a, b) => {
+        const ia = linkedServiceOrder.indexOf(String(a.service_name).trim().toUpperCase());
+        const ib = linkedServiceOrder.indexOf(String(b.service_name).trim().toUpperCase());
+        return ia - ib;
+      });
+    }
     const taxes = TAX_ORDER.map(l => map.get(l)).filter(Boolean);
-    const result = [...base, ...taxes];
+    const result = [...orderedBase, ...taxes];
     if (result.length === items.length && result.every((x, i) => x === items[i])) return items;
     return result;
   };
@@ -490,7 +510,7 @@ function PdasPage() {
             </div>
 
             {pdaResult && (
-              <div className="pda-card" style={{ marginBottom:'32px' }}>
+              <div className="pda-card" style={{ marginTop:'32px', marginBottom:'32px' }}>
                 <h3 style={{ fontWeight: 700, color: '#222', marginBottom: 8 }}>PDA RESULT FOR CLIENT: {pdaResult.client?.name || '-'}</h3>
                 <h4 style={{ fontWeight: 500, color: '#444', marginBottom: 24 }}>VESSEL: {pdaResult.ship?.name || '-'} | PORT: {pdaResult.port?.name || '-'} - {pdaResult.port?.terminal || '-'} - {pdaResult.port?.berth || '-'}</h4>
                 <div className="pda-table-wrapper">
@@ -628,15 +648,15 @@ function PdasPage() {
           <div className="pda-card pda-card--compact pda-side" style={{ display:'flex', flexDirection:'column', gap:12 }}>
             <h3 style={{ fontWeight: 700, color: '#222', margin:0, fontSize:'clamp(.82rem,1.1vw + .4rem,1.05rem)' }}>LAST SAVED PDAs</h3>
             <input className="themed-input" type="text" placeholder="SEARCH..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', padding: '6px 10px', margin:0, boxSizing: 'border-box', fontSize:'.72rem' }}/>
-            <div style={{ borderRadius:10, background:'#f8fafd', boxShadow:'0 1px 4px 0 rgba(0,0,0,0.04)', overflow:'hidden' }}>
-              <table style={{ width: '100%', borderCollapse:'separate', borderSpacing:0, textAlign:'left', fontSize:'.65rem' }}>
+            <div style={{ borderRadius:10, background:'#f8fafd', boxShadow:'0 1px 4px 0 rgba(0,0,0,0.04)', overflow:'hidden', width:'100%' }}>
+              <table style={{ width: '100%', borderCollapse:'separate', borderSpacing:0, textAlign:'left', fontSize:'.65rem', tableLayout:'fixed' }}>
                 <thead>
                   <tr style={{ background:'#e3eafc' }}>
                     <th style={{ padding:'6px 6px', fontWeight:600, color:'#222' }}>PDA</th>
                     <th style={{ padding:'6px 6px', fontWeight:600, color:'#222' }}>CLIENT</th>
                     <th style={{ padding:'6px 6px', fontWeight:600, color:'#222' }}>VESSEL</th>
                     <th style={{ padding:'6px 6px', fontWeight:600, color:'#222' }}>PORT</th>
-                    <th style={{ padding:'6px 6px', fontWeight:600, color:'#222' }}>ACTION</th>
+                    <th style={{ padding:'6px 6px', fontWeight:600, color:'#222', width:'64px', textAlign:'center' }}>ACTION</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -646,7 +666,31 @@ function PdasPage() {
                       <td style={{ padding:'6px 6px', fontWeight:500, color:'#222', whiteSpace:'nowrap', maxWidth:90, overflow:'hidden', textOverflow:'ellipsis' }}>{pda.client_name}</td>
                       <td style={{ padding:'6px 6px', fontWeight:500, color:'#222', whiteSpace:'nowrap', maxWidth:100, overflow:'hidden', textOverflow:'ellipsis' }}>{pda.ship_name}</td>
                       <td style={{ padding:'6px 6px', fontWeight:500, color:'#222', whiteSpace:'nowrap', maxWidth:90, overflow:'hidden', textOverflow:'ellipsis' }}>{pda.port_name}</td>
-                      <td style={{ padding:'4px 6px' }}><button className="header-btn btn-sm" style={{ minWidth:0, fontWeight:700, padding:'4px 8px', fontSize:'.60rem' }} onClick={() => handleOpenPda(pda.id)}>OPEN</button></td>
+                      <td style={{ padding:'4px 6px', width:'64px', textAlign:'center' }}>
+                        <button
+                          aria-label="Open"
+                          title="Open"
+                          className="header-btn btn-sm"
+                          style={{
+                            width:'36px', height:'28px',
+                            display:'inline-flex', alignItems:'center', justifyContent:'center',
+                            padding:0, margin:'0 2px',
+                            background:'#3f51b5', color:'#fff',
+                            border:'none', borderRadius:'8px',
+                            boxShadow:'0 1px 4px 0 rgba(0,0,0,0.08)',
+                            cursor:'pointer',
+                          }}
+                          onClick={() => handleOpenPda(pda.id)}
+                          onMouseOver={e => e.currentTarget.style.background='#283593'}
+                          onMouseOut={e => e.currentTarget.style.background='#3f51b5'}
+                        >
+                          {/* folder-open icon */}
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M3 8V6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2"/>
+                            <path d="M6.3 8H20a2 2 0 0 1 2 2v5.5a2 2 0 0 1-2 2.1H8.2a2 2 0 0 1-1.9-1.3L3 9.4A2 2 0 0 1 4.9 8z"/>
+                          </svg>
+                        </button>
+                      </td>
                     </tr>
                   ))}
                   {paginatedPdas.length === 0 && (

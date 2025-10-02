@@ -126,6 +126,10 @@ app.use('/api/admin', adminRoutes);
 const companiesAdminRoutes = require('./routes/companyAdmin')(pool);
 app.use('/api/companies', companiesAdminRoutes);
 
+// Dashboard
+const dashboardRoutes = require('./routes/dashboard')(pool);
+app.use('/api/dashboard', dashboardRoutes);
+
 // Rota de IA (habilita se AI_SHIPS=1/true ou se houver chave do provedor configurada)
 const aiEnabled = (() => {
   const flag = process.env.AI_SHIPS;

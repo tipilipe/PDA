@@ -52,7 +52,7 @@ export const AuthProvider = ({ children }) => {
           delete axios.defaults.headers.common['Authorization'];
           setUser(null);
           setSettings(null);
-          try { window.location.assign('/login'); } catch {}
+          try { window.location.assign('login'); } catch {}
         }
         return Promise.reject(error);
       }

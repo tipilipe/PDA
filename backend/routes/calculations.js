@@ -45,6 +45,32 @@ module.exports = (pool) => {
     }
   });
 
+  // Atualiza um cálculo existente por ID (permite alterar moeda, método e fórmula)
+  router.put('/:id', protect, async (req, res) => {
+    const { id } = req.params;
+    const { port_id, service_id, currency, formula, calculation_method } = req.body;
+    const { companyId } = req.user;
+    if (!port_id || !service_id || !currency || !formula || !calculation_method) {
+      return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
+    }
+    try {
+      const result = await pool.query(
+        `UPDATE calculations
+         SET port_id = $1, service_id = $2, currency = $3, formula = $4, calculation_method = $5
+         WHERE id = $6 AND company_id = $7
+         RETURNING *`,
+        [port_id, service_id, currency, formula, calculation_method, id, companyId]
+      );
+      if (result.rowCount === 0) {
+        return res.status(404).json({ error: 'Cálculo não encontrado ou não pertence à sua empresa.' });
+      }
+      res.status(200).json(result.rows[0]);
+    } catch (err) {
+      console.error('Erro ao atualizar cálculo:', err);
+      res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  });
+
   // --- NOVA ROTA DELETE PARA EXCLUIR UM CÁLCULO ---
   router.delete('/:id', protect, async (req, res) => {
     const { id } = req.params;

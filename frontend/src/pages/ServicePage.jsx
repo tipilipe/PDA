@@ -15,6 +15,7 @@ function ServicePage() {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [search, setSearch] = useState('');
   
   const initialFormState = { name: '', is_taxable: false };
   const [newService, setNewService] = useState(initialFormState);
@@ -108,7 +109,16 @@ function ServicePage() {
         </div>
         <div className="app-card">
           <h2 style={{ margin: 0, fontWeight: 700, fontSize: 'clamp(1.1rem,2vw+0.4rem,1.5rem)' }}>Lista de Serviços Cadastrados</h2>
-          <div className="table-responsive" style={{ marginTop:24 }}>
+          <div style={{ marginTop:12 }}>
+            <input
+              className="themed-input"
+              placeholder="Pesquisar por nome do serviço..."
+              value={search}
+              onChange={(e)=>setSearch(e.target.value)}
+              style={{ width:'100%', maxWidth:420 }}
+            />
+          </div>
+          <div className="table-responsive" style={{ marginTop:12, maxHeight:420, overflow:'auto' }}>
             <table className="table-basic">
               <thead>
                 <tr>
@@ -119,7 +129,17 @@ function ServicePage() {
                 </tr>
               </thead>
               <tbody>
-                {services.map((service) => (
+                {services
+                  .filter((s)=>{
+                    const q = search.trim().toLowerCase();
+                    if (!q) return true;
+                    return (
+                      String(s.name||'').toLowerCase().includes(q) ||
+                      String(s.id||'').toLowerCase().includes(q) ||
+                      String(s.is_taxable ? 'sim' : 'nao').includes(q)
+                    );
+                  })
+                  .map((service) => (
                   <tr key={service.id}>
                     <td>{service.id}</td>
                     <td>{service.name}</td>

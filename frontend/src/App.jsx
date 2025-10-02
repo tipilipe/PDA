@@ -2,6 +2,7 @@
 import React, { useContext, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
+import DashboardPage from './pages/DashboardPage';
 import ShipsPage from './pages/ShipsPage';
 import ClientsPage from './pages/ClientsPage';
 import PortsPage from './pages/PortsPage';
@@ -45,16 +46,26 @@ function ProtectedRoutes() {
   <Route path="/port-remarks" element={<RequireTab tabKey="port_remarks"><PortRemarksPage /></RequireTab>} />
   <Route path="/profile" element={<RequireTab tabKey="profile"><ProfilePage /></RequireTab>} />
   <Route path="/admin" element={<RequireAdmin><RequireTab tabKey="admin"><AdminPage /></RequireTab></RequireAdmin>} />
-      <Route path="/dashboard" element={<div>Dashboard</div>} />
+    <Route path="/dashboard" element={<RequireTab tabKey="dashboard"><DashboardPage /></RequireTab>} />
     </Route>
   );
 }
 
 function App() {
   const { user, logout } = useContext(AuthContext);
+  // Detect base path at runtime to support hosting under /sistema without requiring env
+  const computedBase = (() => {
+    const base = import.meta.env.BASE_URL || '/';
+    if (base && base !== '/') return base;
+    // Heuristic: if app is served under /sistema, keep routing there
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/sistema')) {
+      return '/sistema/';
+    }
+    return '/';
+  })();
 
   return (
-    <BrowserRouter basename={import.meta.env.BASE_URL}>
+    <BrowserRouter basename={computedBase}>
       <Routes>
         {/* Se já estiver logado e acessar /login, redireciona para /pda */}
         <Route path="/login" element={user ? <Navigate to="/pda" replace /> : <LoginPage />} />

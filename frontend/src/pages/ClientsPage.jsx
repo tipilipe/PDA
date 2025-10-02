@@ -16,6 +16,7 @@ function ClientsPage() {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [search, setSearch] = useState('');
   
   const initialFormState = { name: '', po_number: '', vat_number: '', address: '', remark: '' };
   const [newClient, setNewClient] = useState(initialFormState);
@@ -93,10 +94,19 @@ function ClientsPage() {
           </form>
           <hr style={{ margin:'28px 0 20px' }} />
           <h2 style={{ marginTop:0, fontSize: 'clamp(1rem,2vw+0.3rem,1.35rem)' }}>Lista de Clientes Cadastrados</h2>
+          <div style={{ marginTop:12 }}>
+            <input
+              className="themed-input"
+              placeholder="Pesquisar por nome, PO, VAT, endereço..."
+              value={search}
+              onChange={(e)=>setSearch(e.target.value)}
+              style={{ width:'100%', maxWidth:420 }}
+            />
+          </div>
           {loading && <div>Carregando...</div>}
           {error && <div style={{ color: 'red' }}>{error}</div>}
           {!loading && !error && (
-            <div className="table-responsive">
+            <div className="table-responsive" style={{ maxHeight: 420, overflow: 'auto', marginTop:12 }}>
               <table className="table-basic">
               <thead>
                 <tr>
@@ -105,7 +115,20 @@ function ClientsPage() {
                 </tr>
               </thead>
               <tbody>
-                {clients.map((client) => (
+                {clients
+                  .filter((c)=>{
+                    const q = search.trim().toLowerCase();
+                    if (!q) return true;
+                    return (
+                      String(c.name||'').toLowerCase().includes(q) ||
+                      String(c.po_number||'').toLowerCase().includes(q) ||
+                      String(c.vat_number||'').toLowerCase().includes(q) ||
+                      String(c.address||'').toLowerCase().includes(q) ||
+                      String(c.remark||'').toLowerCase().includes(q) ||
+                      String(c.id||'').toLowerCase().includes(q)
+                    );
+                  })
+                  .map((client) => (
                   <tr key={client.id}>
                     <td>{client.id}</td><td>{client.name}</td><td>{client.po_number}</td>
                     <td>{client.vat_number}</td><td>{client.address}</td><td>{client.remark}</td>

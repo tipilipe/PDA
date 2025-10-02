@@ -118,14 +118,14 @@ module.exports = (pool) => {
 
     const client = await pool.connect();
     try {
-      const [shipRes, portRes, clientRes, linkedServicesRes, calculationsRes, remarksRes] = await Promise.all([
+      const [shipRes, portRes, clientRes, linkedServicesRes, calculationsRes, remarksRes, pilotageTariffsRes] = await Promise.all([
         client.query('SELECT * FROM ships WHERE id = $1 AND company_id = $2', [ship_id, companyId]),
         client.query('SELECT * FROM ports WHERE id = $1 AND company_id = $2', [port_id, companyId]),
         client.query('SELECT * FROM clients WHERE id = $1 AND company_id = $2', [client_id, companyId]),
-        client.query('SELECT service_id FROM port_services WHERE port_id = $1 AND company_id = $2', [port_id, companyId]),
+        // Ordem dos serviços vinculados conforme inserção (id ASC)
+        client.query('SELECT id, service_id FROM port_services WHERE port_id = $1 AND company_id = $2 ORDER BY id ASC', [port_id, companyId]),
         client.query(`SELECT calc.*, s.name as service_name FROM calculations calc JOIN services s ON s.id = calc.service_id WHERE calc.port_id = $1 AND calc.company_id = $2`, [port_id, companyId]),
         client.query('SELECT * FROM port_remarks WHERE port_id = $1 AND company_id = $2 ORDER BY display_order ASC', [port_id, companyId]),
-        // --- ADICIONE ESTA LINHA ---
         client.query('SELECT * FROM pilotage_tariffs WHERE port_id = $1 AND company_id = $2', [port_id, companyId])
       ]);
 
@@ -136,8 +136,10 @@ module.exports = (pool) => {
       const ship = shipRes.rows[0];
       const port = portRes.rows[0];
       const selectedClient = clientRes.rows[0];
-      const linkedServiceIds = new Set(linkedServicesRes.rows.map(r => r.service_id));
-      const calculations = calculationsRes.rows;
+  const linkedServiceIds = new Set(linkedServicesRes.rows.map(r => r.service_id));
+  // Ordem desejada conforme vínculos salvos
+  const linkedOrder = linkedServicesRes.rows.map(r => r.service_id);
+  const calculations = calculationsRes.rows;
       const remarks = remarksRes.rows;
 
       const scope = {
@@ -155,8 +157,34 @@ module.exports = (pool) => {
 
       const calculatedItems = [];
 
-      for (const calc of calculations) {
-        if (!linkedServiceIds.has(calc.service_id)) continue;
+
+      // --- Cálculo dos serviços normais (FIXED, FORMULA, CONDITIONAL) ---
+      // Buscar todas as tabelas de praticagem do porto e empresa
+      const pilotageTariffs = pilotageTariffsRes.rows || [];
+      // Função para buscar valor da TAG
+      async function getTagValue(tag, grt) {
+        const tariff = pilotageTariffs.find(t => String(t.tag_name).toUpperCase() === String(tag).toUpperCase());
+        if (!tariff) return 0;
+        const rangesRes = await client.query('SELECT * FROM pilotage_tariff_ranges WHERE tariff_id = $1 ORDER BY range_start ASC', [tariff.id]);
+        const ranges = rangesRes.rows || [];
+        for (const faixa of ranges) {
+          if (grt >= parseNumberSafe(faixa.range_start) && grt <= parseNumberSafe(faixa.range_end)) {
+            return parseNumberSafe(faixa.value);
+          }
+        }
+        return 0;
+      }
+
+      // Preparar índice de cálculos por service_id para acesso rápido
+      const calcByServiceId = new Map();
+      for (const c of calculations) {
+        calcByServiceId.set(c.service_id, c);
+      }
+
+      // Itera na ordem dos serviços vinculados para respeitar a ordenação definida pelo usuário
+      for (const svcId of linkedOrder) {
+        const calc = calcByServiceId.get(svcId);
+        if (!calc) continue; // sem cálculo configurado para este serviço
         let resultValue = 0;
         const method = (calc.calculation_method || '').toUpperCase();
 
@@ -167,14 +195,20 @@ module.exports = (pool) => {
             console.error(`Fórmula bloqueada: ${calc.formula}`);
             resultValue = 0;
           } else {
+            // Substituir TAGs (@TAG) por valores reais antes de calcular
+            let formulaToEval = calc.formula;
+            const tagMatches = formulaToEval.match(/@[A-Za-z0-9_]+/g) || [];
+            for (const tag of tagMatches) {
+              const tagValue = await getTagValue(tag, parseNumberSafe(ship.grt || 0));
+              formulaToEval = formulaToEval.replace(new RegExp(tag, 'g'), String(tagValue));
+            }
             const safeScope = {};
             Object.keys(scope).forEach(k => { safeScope[k] = Number(scope[k]) || 0; });
-
             try {
-              const evalResult = math.evaluate(calc.formula, safeScope);
+              const evalResult = math.evaluate(formulaToEval, safeScope);
               resultValue = parseNumberSafe(evalResult);
             } catch (e) {
-              console.error(`Erro fórmula: ${calc.formula}`, e);
+              console.error(`Erro fórmula: ${formulaToEval}`, e);
               resultValue = 0;
             }
           }
@@ -183,10 +217,17 @@ module.exports = (pool) => {
             const c = JSON.parse(calc.formula);
             let ruleMatched = false;
             for (const rule of c.rules) {
+              let ruleValue = rule.value;
+              // Substituir TAGs (@TAG) por valores reais na regra condicional
+              const tagMatches = String(ruleValue).match(/@[A-Za-z0-9_]+/g) || [];
+              for (const tag of tagMatches) {
+                const tagValue = await getTagValue(tag, parseNumberSafe(ship.grt || 0));
+                ruleValue = String(ruleValue).replace(new RegExp(tag, 'g'), String(tagValue));
+              }
               const varName = rule.variable;
               const left = Number.isFinite(Number(scope[varName])) ? Number(scope[varName]) : 0;
               const operator = rule.operator;
-              const right = parseNumberSafe(rule.value);
+              const right = parseNumberSafe(ruleValue);
               let exprResult = false;
               switch (operator) {
                 case '>': exprResult = left > right; break;
@@ -209,10 +250,11 @@ module.exports = (pool) => {
             resultValue = 0;
           }
         }
-
         resultValue = parseNumberSafe(resultValue);
         calculatedItems.push({ service_name: calc.service_name, value: resultValue, currency: calc.currency });
       }
+
+      // --- Não adicionar praticagem automaticamente, apenas via TAG na fórmula ---
 
       const responsePayload = { ship, port, client: selectedClient, roe, items: calculatedItems, remarks, pdaNumber, cargo, totalCargo, eta, etb, etd };
       res.json(responsePayload);

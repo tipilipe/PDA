@@ -1,3 +1,14 @@
+/* Scrollable list containers used in entity pages */
+.table-responsive {
+  /* When a max-height is set inline, allow vertical scroll */
+  overflow: auto;
+}
+
+/* Optional small button used in compact tables */
+.btn-sm {
+  font-size: 0.72rem;
+  padding: 4px 8px;
+}
 /* --- ShipStore Sidebar Layout (corrigido) --- */
 /* Removido display:none que ocultava toda a aplicação. */
 /* Variáveis de layout */
@@ -45,7 +56,7 @@ html, body { overflow-x:hidden; }
 @media print{
   .ss-sidebar,.ss-topbar{ display:none !important; }
   .ss-content{ margin-left:0 !important; }
-  .ss-main{ padding:0 !important; }
+  .ss-main{ padding:0 !important; overflow: visible !important; height: auto !important; }
 }
 
 /* Paleta corporativa e tokens base */
@@ -255,13 +266,27 @@ main { margin-top: 24px !important; padding: 0 8px 0 12px !important; }
 /* Impressão */
 @media print {
   @page { size: A4; margin: 14mm 16mm; }
-  html, body { background:#fff !important; color:#000 !important; margin:0 !important; }
+  html, body { background:#fff !important; color:#000 !important; margin:0 !important; overflow: visible !important; }
   /* Esconde apenas a área de aplicação navegável marcada */
   .no-print, .ss-sidebar, .ss-topbar, header, nav { display:none !important; }
+  /* Esconde cartões e layout da aplicação para imprimir somente o documento */
+  .pda-layout, .app-card, .pda-card, .pda-side, .pda-main, .pda-actions-wrap { display:none !important; }
   /* Mantém printable-area visível sem alterar visibilidade global */
-  .printable-area { box-shadow:none !important; border-radius:0 !important; padding:0 !important; margin:0 !important; max-width:100% !important; }
+  .printable-area { box-shadow:none !important; border-radius:0 !important; padding:0 !important; margin:0 !important; max-width:100% !important; overflow: visible !important; }
   .print-wrapper { display:block !important; }
-  .printable-pda { page-break-inside:avoid; }
+    .printable-pda { page-break-inside:auto !important; break-inside:auto !important; overflow: visible !important; }
+    .printable-pda * { page-break-inside:auto !important; break-inside:auto !important; overflow: visible !important; }
+  /* Garante que nenhum ancestral imponha rolagem no print */
+  .ss-layout, .ss-content, .ss-main { overflow: visible !important; height: auto !important; }
+  /* Remove barras de rolagem caso algum elemento ainda as crie */
+  *, .printable-area, .printable-area * { -ms-overflow-style: none !important; scrollbar-width: none !important; }
+  .printable-area::-webkit-scrollbar, .printable-area *::-webkit-scrollbar, .printable-pda::-webkit-scrollbar { display: none !important; }
+    .printable-pda { scrollbar-color: transparent transparent !important; }
+  /* Evita corte de texto largo (URLs, termos longos) */
+  .printable-area, .printable-area * { overflow-wrap:anywhere; word-break:break-word; white-space: normal !important; }
+  /* Garante que tabelas não forcem corte: usa layout automático e 100% de largura */
+  .printable-area table { table-layout: auto !important; width: 100% !important; }
+  .printable-area th, .printable-area td { white-space: normal !important; }
 }
 
 /* Tipografia base mais corporativa */

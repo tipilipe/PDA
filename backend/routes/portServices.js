@@ -11,7 +11,7 @@ module.exports = (pool) => {
 
     try {
       const result = await pool.query(
-        'SELECT service_id FROM port_services WHERE port_id = $1 AND company_id = $2',
+        'SELECT service_id FROM port_services WHERE port_id = $1 AND company_id = $2 ORDER BY id ASC',
         [portId, companyId]
       );
       // Retorna apenas um array de IDs, ex: [1, 5, 12]

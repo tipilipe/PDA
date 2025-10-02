@@ -4,6 +4,7 @@ import AuthContext from '../context/AuthContext';
 import { API_BASE } from '../config';
 
 const ALL_TABS = [
+	{ key: 'dashboard', label: 'Dashboard' },
 	{ key: 'pda', label: 'Gerar PDA' },
 	{ key: 'ships', label: 'Navios' },
 	{ key: 'clients', label: 'Clientes' },

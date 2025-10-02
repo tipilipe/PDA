@@ -1,9 +1,17 @@
 # Node
+frontend/node_modules/
+backend/node_modules/
 node_modules/
+frontend/dist/
+frontend/dist.zip
+dist/
+dist-ssr/
+*.log
 
 # Environment files (do not commit secrets)
 .env
 .env.*
+!.env.example
 
 # Logs
 logs/
@@ -20,3 +28,8 @@ dist/
 # OS
 .DS_Store
 Thumbs.db
+.vscode/
+
+
+# PHP
+php-api/vendor/

@@ -17,6 +17,7 @@ function PortsPage() {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [search, setSearch] = useState('');
 
   const initialFormState = { name: '', terminal: '', berth: '', client_id: '', remark: '' };
   const [newPort, setNewPort] = useState(initialFormState);
@@ -105,7 +106,16 @@ function PortsPage() {
         </div>
         <div className="app-card">
           <h2 style={{ margin: 0, fontWeight: 700, fontSize: 'clamp(1.1rem,2vw+0.4rem,1.5rem)' }}>Lista de Portos Cadastrados</h2>
-          <div className="table-responsive" style={{ marginTop:24 }}>
+          <div style={{ marginTop:12 }}>
+            <input
+              className="themed-input"
+              placeholder="Pesquisar por porto, terminal, berço ou cliente..."
+              value={search}
+              onChange={(e)=>setSearch(e.target.value)}
+              style={{ width:'100%', maxWidth:420 }}
+            />
+          </div>
+          <div className="table-responsive" style={{ marginTop:12, maxHeight:420, overflow:'auto' }}>
             <table className="table-basic">
               <thead>
                 <tr>
@@ -119,7 +129,19 @@ function PortsPage() {
                 </tr>
               </thead>
               <tbody>
-                {ports.map((port) => (
+                {ports
+                  .filter((p)=>{
+                    const q = search.trim().toLowerCase();
+                    if (!q) return true;
+                    return (
+                      String(p.name||'').toLowerCase().includes(q) ||
+                      String(p.terminal||'').toLowerCase().includes(q) ||
+                      String(p.berth||'').toLowerCase().includes(q) ||
+                      String(p.client_name||'').toLowerCase().includes(q) ||
+                      String(p.id||'').toLowerCase().includes(q)
+                    );
+                  })
+                  .map((port) => (
                   <tr key={port.id}>
                     <td>{port.id}</td>
                     <td>{port.name}</td>

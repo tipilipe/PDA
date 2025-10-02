@@ -64,7 +64,19 @@ function CalculationsPage() {
       formulaPayload = JSON.stringify({ rules: form.conditional_rules, defaultValue: form.conditional_default });
     }
     try {
-  await axios.post(`${API_BASE}/api/calculations`, { port_id: selectedPortId, service_id: form.service_id, currency: form.currency, calculation_method: form.calculation_method, formula: formulaPayload });
+      if (editingCalcId) {
+        // Atualiza o cálculo existente (permite alterar a moeda)
+        await axios.put(`${API_BASE}/api/calculations/${editingCalcId}`, {
+          port_id: selectedPortId,
+          service_id: form.service_id,
+          currency: form.currency,
+          calculation_method: form.calculation_method,
+          formula: formulaPayload,
+        });
+      } else {
+        // Cria/atualiza (upsert) quando não está em modo de edição
+        await axios.post(`${API_BASE}/api/calculations`, { port_id: selectedPortId, service_id: form.service_id, currency: form.currency, calculation_method: form.calculation_method, formula: formulaPayload });
+      }
       fetchCalculationsForPort(selectedPortId);
       setForm(initialFormState); setEditingCalcId(null);
       alert('Fórmula salva com sucesso!');
@@ -76,8 +88,34 @@ function CalculationsPage() {
     if (calc.calculation_method === 'CONDITIONAL') {
       try {
         const conditionalData = JSON.parse(calc.formula);
-        setForm({ service_id: calc.service_id, currency: calc.currency, calculation_method: calc.calculation_method, formula: '', conditional_rules: conditionalData.rules, conditional_default: conditionalData.defaultValue });
-      } catch (e) { alert("Erro ao ler dados da fórmula condicional para edição."); }
+        setForm({
+          service_id: calc.service_id,
+          currency: calc.currency,
+          calculation_method: calc.calculation_method,
+          formula: calc.formula,
+          conditional_rules: conditionalData.rules || [{ variable: '@GRT', operator: '<=', value: '', result: '' }],
+          conditional_default: conditionalData.defaultValue || ''
+        });
+      } catch (e) {
+        alert("Erro ao ler dados da fórmula condicional para edição.");
+        setForm({
+          service_id: calc.service_id,
+          currency: calc.currency,
+          calculation_method: calc.calculation_method,
+          formula: calc.formula,
+          conditional_rules: [{ variable: '@GRT', operator: '<=', value: '', result: '' }],
+          conditional_default: ''
+        });
+      }
+    } else {
+      setForm({
+        service_id: calc.service_id,
+        currency: calc.currency,
+        calculation_method: calc.calculation_method,
+        formula: calc.formula,
+        conditional_rules: [{ variable: '@GRT', operator: '<=', value: '', result: '' }],
+        conditional_default: ''
+      });
     }
   };
 
@@ -121,7 +159,8 @@ function CalculationsPage() {
                         {services.map(s => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}
                       </Select>
                     </FormControl>
-                    <FormControl style={{ minWidth: 120 }} size="small" disabled={!!editingCalcId}>
+                    {/* Serviço bloqueado em edição para evitar troca do alvo; moeda pode ser alterada */}
+                    <FormControl style={{ minWidth: 120 }} size="small">
                       <InputLabel>Moeda</InputLabel>
                       <Select name="currency" value={form.currency} label="Moeda" onChange={handleInputChange}><MenuItem value="USD">USD</MenuItem><MenuItem value="BRL">BRL</MenuItem></Select>
                     </FormControl>

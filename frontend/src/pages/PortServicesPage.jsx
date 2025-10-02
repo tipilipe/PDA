@@ -47,10 +47,12 @@ function PortServicesPage() {
     const fetchLinkedServices = async () => {
       try {
   const res = await axios.get(`${API_BASE}/api/port-services/${selectedPortId}`);
-        const linkedIds = new Set(res.data);
-
-        const linked = allServices.filter(s => linkedIds.has(s.id));
-        const available = allServices.filter(s => !linkedIds.has(s.id));
+  // A API já retorna os IDs na ordem salva. Vamos manter essa ordem ao montar 'linked'.
+  const linkedIds = res.data; // array ordenado
+  const linkedSet = new Set(linkedIds);
+  const idToService = new Map(allServices.map(s => [s.id, s]));
+  const linked = linkedIds.map(id => idToService.get(id)).filter(Boolean);
+  const available = allServices.filter(s => !linkedSet.has(s.id));
 
         setLinkedServices(linked);
         setAvailableServices(available);

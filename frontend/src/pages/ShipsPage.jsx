@@ -26,6 +26,7 @@ function ShipsPage() {
   const [ships, setShips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [search, setSearch] = useState('');
 
   const initialFormState = { name: '', imo: '', dwt: '', grt: '', net: '', loa: '', beam: '', draft: '', depth: '', flag: '', year: '' };
   const [newShip, setNewShip] = useState(initialFormState);
@@ -144,10 +145,19 @@ function ShipsPage() {
         </div>
         <div className="app-card">
           <h2 style={{ margin: 0, fontWeight: 700, fontSize: 'clamp(1.1rem,2vw+0.4rem,1.5rem)' }}>Lista de Navios Cadastrados</h2>
+          <div style={{ marginTop:12 }}>
+            <input
+              className="themed-input"
+              placeholder="Pesquisar por nome, IMO, bandeira..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ width:'100%', maxWidth:420 }}
+            />
+          </div>
           {loading && <div>Carregando navios...</div>}
           {error && <div style={{ color: 'red' }}>{error}</div>}
           {!loading && !error && (
-            <div className="table-responsive">
+            <div className="table-responsive" style={{ maxHeight: 420, overflow: 'auto', marginTop:12 }}>
               <table className="table-basic">
                 <thead>
                   <tr>
@@ -167,7 +177,18 @@ function ShipsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {ships.map((ship) => (
+                  {ships
+                    .filter((ship) => {
+                      const q = search.trim().toLowerCase();
+                      if (!q) return true;
+                      return (
+                        String(ship.name || '').toLowerCase().includes(q) ||
+                        String(ship.imo || '').toLowerCase().includes(q) ||
+                        String(ship.flag || '').toLowerCase().includes(q) ||
+                        String(ship.id || '').toLowerCase().includes(q)
+                      );
+                    })
+                    .map((ship) => (
                     <tr key={ship.id}>
                       <td>{ship.id}</td>
                       <td>{ship.name}</td>
