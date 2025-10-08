@@ -2,6 +2,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { createLog } = require('../models/log');
 const router = express.Router();
 
 // Chave JWT: usa variável de ambiente em produção, com fallback para dev
@@ -35,6 +36,23 @@ module.exports = (pool) => {
       const userResult = await client.query(userQuery, [userName, email, password_hash, newCompanyId, 'admin']);
 
       await client.query('COMMIT'); // Se tudo deu certo, efetiva as alterações no banco
+      // Log de criação de empresa e usuário
+      await createLog(pool, {
+        userId: userResult.rows[0].id,
+        username: userResult.rows[0].name || email,
+        action: 'create',
+        entity: 'company',
+        entityId: newCompanyId,
+        details: JSON.stringify({ companyName })
+      });
+      await createLog(pool, {
+        userId: userResult.rows[0].id,
+        username: userResult.rows[0].name || email,
+        action: 'create',
+        entity: 'user',
+        entityId: userResult.rows[0].id,
+        details: JSON.stringify(userResult.rows[0])
+      });
       res.status(201).json({
         message: 'Empresa e usuário criados com sucesso!',
         user: userResult.rows[0]
@@ -82,6 +100,15 @@ module.exports = (pool) => {
         token: token,
         user: { id: user.id, name: user.name, email: user.email }
       });
+      // Log de login
+      await createLog(pool, {
+        userId: user.id,
+        username: user.name || user.email,
+        action: 'login',
+        entity: 'user',
+        entityId: user.id,
+        details: JSON.stringify({ email })
+      });
 
     } catch (err) {
       console.error('Erro no login:', err);
@@ -118,6 +145,15 @@ module.exports = (pool) => {
       const password_hash = await bcrypt.hash(password, salt);
       await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [password_hash, userId]);
       await pool.query('UPDATE admin_user_settings SET allow_password_reset = FALSE WHERE user_id = $1', [userId]);
+      // Log de alteração de senha
+      await createLog(pool, {
+        userId,
+        username: '',
+        action: 'update',
+        entity: 'user',
+        entityId: userId,
+        details: 'password reset'
+      });
       res.json({ message: 'Senha atualizada com sucesso.' });
     } catch (err) {
       console.error('Erro no reset-password:', err);

@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
 const { create, all } = require('mathjs');
+const { createLog } = require('../models/log');
 
 const math = create(all);
 
@@ -44,6 +45,9 @@ module.exports = (pool) => {
         pda.id, 
         pda.pda_number,
         pda.created_at,
+        pda.eta,
+        pda.etb,
+        pda.etd,
         c.name as client_name,
         s.name as ship_name,
         p.name as port_name,
@@ -270,6 +274,8 @@ module.exports = (pool) => {
   router.post('/save', protect, async (req, res) => {
     const { pdaData } = req.body;
     const { companyId } = req.user;
+    const userId = req.user.id;
+    const username = req.user.name || req.user.email || '';
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -298,10 +304,62 @@ module.exports = (pool) => {
         await client.query(itemInsertQuery, [newPdaId, item.service_name, valueToInsert, item.currency]);
       }
       await client.query('COMMIT');
+      await createLog(pool, {
+        userId,
+        username,
+        action: 'create',
+        entity: 'pda',
+        entityId: newPdaId,
+        details: JSON.stringify(pdaData)
+      });
       res.status(201).json({ message: 'PDA salva com sucesso!', pdaId: newPdaId });
     } catch (err) {
       await client.query('ROLLBACK');
       console.error('Erro ao salvar PDA:', err);
+      res.status(500).json({ error: 'Erro interno do servidor' });
+    } finally {
+      client.release();
+    }
+  });
+
+  // DELETE uma PDA
+  router.delete('/:id', protect, async (req, res) => {
+    const { id } = req.params;
+    const { companyId } = req.user;
+    const userId = req.user.id;
+    const username = req.user.name || req.user.email || '';
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      
+      // Verifica se a PDA existe e pertence à empresa do usuário
+      const checkQuery = 'SELECT id FROM pdas WHERE id = $1 AND company_id = $2';
+      const checkResult = await client.query(checkQuery, [id, companyId]);
+      
+      if (checkResult.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'PDA não encontrada.' });
+      }
+      
+      // Remove os itens da PDA primeiro (devido à foreign key)
+      await client.query('DELETE FROM pda_items WHERE pda_id = $1', [id]);
+      
+      // Remove a PDA
+      await client.query('DELETE FROM pdas WHERE id = $1', [id]);
+      
+      await client.query('COMMIT');
+      await createLog(pool, {
+        userId,
+        username,
+        action: 'delete',
+        entity: 'pda',
+        entityId: id,
+        details: null
+      });
+      res.json({ message: 'PDA excluída com sucesso.' });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('Erro ao excluir PDA:', err);
       res.status(500).json({ error: 'Erro interno do servidor' });
     } finally {
       client.release();

@@ -77,6 +77,17 @@ function ClientsPage() {
     }
   };
 
+  const handleDeleteClient = async (id) => {
+    if (!window.confirm('Tem certeza que deseja excluir este cliente?')) return;
+    try {
+      await axios.delete(`${API_BASE}/api/clients/${id}`);
+      fetchClients();
+    } catch (err) {
+      alert('Erro ao excluir o cliente.');
+      console.error(err);
+    }
+  };
+
   return (
     <div className="no-print" style={{ background: 'var(--background-default, #181c24)', minHeight: '100vh', padding: '32px 0' }}>
       <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px', padding: '0 20px', boxSizing:'border-box' }}>
@@ -132,9 +143,14 @@ function ClientsPage() {
                   <tr key={client.id}>
                     <td>{client.id}</td><td>{client.name}</td><td>{client.po_number}</td>
                     <td>{client.vat_number}</td><td>{client.address}</td><td>{client.remark}</td>
-                    <td>
-                      <button className="header-btn" style={{ minWidth: 0, fontWeight: 700 }} onClick={() => handleOpenEditModal(client)}>Editar</button>
-                    </td>
+                      <td>
+                        <button className="header-btn" style={{ minWidth: 0, fontWeight: 700 }} onClick={() => handleOpenEditModal(client)}>
+                          <span role="img" aria-label="Editar">✏️</span>
+                        </button>
+                        <button className="header-btn" style={{ minWidth: 0, fontWeight: 700, background: '#b42318', marginLeft: 6 }} onClick={() => handleDeleteClient(client.id)}>
+                          <span role="img" aria-label="Excluir">🗑️</span>
+                        </button>
+                      </td>
                   </tr>
                 ))}
               </tbody>

@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { protect } = require('../middleware/authMiddleware');
+const { createLog } = require('../models/log');
 
 module.exports = (pool) => {
   const router = express.Router();
@@ -31,6 +32,8 @@ module.exports = (pool) => {
   router.post('/users', protect, ensureAdmin, async (req, res) => {
     const { companyId: adminCompanyId } = req.user;
     const { name, email, password, isAdmin, companyId } = req.body;
+    const userId = req.user.id;
+    const username = req.user.name || req.user.email || '';
     if (!name || !email || !password) {
       return res.status(400).json({ error: 'Nome, email e senha são obrigatórios.' });
     }
@@ -48,6 +51,14 @@ module.exports = (pool) => {
                      VALUES ($1, $2, $3, $4, $5)
                      RETURNING id, name, email, role`;
       const result = await pool.query(query, [name, email, password_hash, targetCompanyId, role]);
+      await createLog(pool, {
+        userId,
+        username,
+        action: 'create',
+        entity: 'user',
+        entityId: result.rows[0].id,
+        details: JSON.stringify(result.rows[0])
+      });
       res.status(201).json(result.rows[0]);
     } catch (err) {
       console.error('Erro ao criar usuário:', err);
@@ -59,12 +70,22 @@ module.exports = (pool) => {
   router.put('/users/:id', protect, ensureAdmin, async (req, res) => {
     const { id } = req.params;
     const { name, role } = req.body;
+    const userId = req.user.id;
+    const username = req.user.name || req.user.email || '';
     try {
       const result = await pool.query(
         'UPDATE users SET name = COALESCE($1, name), role = COALESCE($2, role) WHERE id = $3 RETURNING id, name, email, role, company_id',
         [name || null, role || null, id]
       );
       if (result.rowCount === 0) return res.status(404).json({ error: 'Usuário não encontrado.' });
+      await createLog(pool, {
+        userId,
+        username,
+        action: 'update',
+        entity: 'user',
+        entityId: id,
+        details: JSON.stringify(result.rows[0])
+      });
       res.json(result.rows[0]);
     } catch (err) {
       console.error('Erro ao atualizar usuário:', err);
@@ -76,12 +97,22 @@ module.exports = (pool) => {
   router.post('/users/:id/reset-password', protect, ensureAdmin, async (req, res) => {
     const { id } = req.params;
     const { password } = req.body;
+    const userId = req.user.id;
+    const username = req.user.name || req.user.email || '';
     if (!password) return res.status(400).json({ error: 'Senha é obrigatória.' });
     try {
       const salt = await bcrypt.genSalt(10);
       const password_hash = await bcrypt.hash(password, salt);
       const result = await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2 RETURNING id', [password_hash, id]);
       if (result.rowCount === 0) return res.status(404).json({ error: 'Usuário não encontrado.' });
+      await createLog(pool, {
+        userId,
+        username,
+        action: 'update',
+        entity: 'user',
+        entityId: id,
+        details: 'password reset (admin)'
+      });
       res.json({ message: 'Senha redefinida com sucesso.' });
     } catch (err) {
       console.error('Erro ao redefinir senha:', err);
@@ -177,9 +208,19 @@ module.exports = (pool) => {
   router.post('/users/:id/company', protect, ensureAdmin, async (req, res) => {
     const { id } = req.params;
     const { companyId } = req.body;
+    const userId = req.user.id;
+    const username = req.user.name || req.user.email || '';
     try {
       const result = await pool.query('UPDATE users SET company_id = $1 WHERE id = $2 RETURNING id, name, email, role, company_id', [companyId, id]);
       if (result.rowCount === 0) return res.status(404).json({ error: 'Usuário não encontrado.' });
+      await createLog(pool, {
+        userId,
+        username,
+        action: 'update',
+        entity: 'user',
+        entityId: id,
+        details: JSON.stringify(result.rows[0])
+      });
       res.json(result.rows[0]);
     } catch (e) {
       console.error('Erro ao vincular empresa:', e);
@@ -190,11 +231,21 @@ module.exports = (pool) => {
   // Excluir usuário
   router.delete('/users/:id', protect, ensureAdmin, async (req, res) => {
     const { id } = req.params;
+    const userId = req.user.id;
+    const username = req.user.name || req.user.email || '';
     try {
       // remover settings juntos por FK ON DELETE CASCADE, mas garante se não houver
       await pool.query('DELETE FROM admin_user_settings WHERE user_id = $1', [id]).catch(() => {});
       const result = await pool.query('DELETE FROM users WHERE id = $1 RETURNING id', [id]);
       if (result.rowCount === 0) return res.status(404).json({ error: 'Usuário não encontrado.' });
+      await createLog(pool, {
+        userId,
+        username,
+        action: 'delete',
+        entity: 'user',
+        entityId: id,
+        details: null
+      });
       res.json({ message: 'Usuário excluído com sucesso.' });
     } catch (e) {
       console.error('Erro ao excluir usuário:', e);

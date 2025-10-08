@@ -113,6 +113,17 @@ function ShipsPage() {
     }
   };
 
+  const handleDeleteShip = async (id) => {
+    if (!window.confirm('Tem certeza que deseja excluir este navio?')) return;
+    try {
+      await axios.delete(`${API_BASE}/api/ships/${id}`);
+      fetchShips();
+    } catch (err) {
+      alert('Erro ao excluir o navio.');
+      console.error(err);
+    }
+  };
+
   return (
     <div style={{ background: 'var(--background-default, #181c24)', minHeight: '100vh', padding: '32px 0' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px', padding: '0 20px', boxSizing:'border-box' }}>
@@ -202,9 +213,14 @@ function ShipsPage() {
                       <td>{ship.beam}</td>
                       <td>{ship.draft}</td>
                       <td>{ship.depth}</td>
-                      <td>
-                        <button className="header-btn" style={{ minWidth: 0, fontWeight: 700 }} onClick={() => handleOpenEditModal(ship)}>Editar</button>
-                      </td>
+                        <td>
+                          <button className="header-btn" style={{ minWidth: 0, fontWeight: 700 }} onClick={() => handleOpenEditModal(ship)}>
+                            <span role="img" aria-label="Editar">✏️</span>
+                          </button>
+                          <button className="header-btn" style={{ minWidth: 0, fontWeight: 700, background: '#b42318', marginLeft: 6 }} onClick={() => handleDeleteShip(ship.id)}>
+                            <span role="img" aria-label="Excluir">🗑️</span>
+                          </button>
+                        </td>
                     </tr>
                   ))}
                 </tbody>

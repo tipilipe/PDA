@@ -161,6 +161,12 @@ if (aiEnabled) {
   console.log('[ai] Rota /api/ai/vessel desabilitada. Defina AI_SHIPS=1 ou configure AI_PROVIDER e a respectiva API key.');
 }
 
+// Servir arquivos estáticos do frontend
+const path = require('path');
+const frontendPath = path.join(__dirname, '..', 'frontend', 'dist');
+// Serve arquivos estáticos na rota /sistema (conforme configuração do Vite)
+app.use('/sistema', express.static(frontendPath));
+
 // Health check (inclui teste simples no banco)
 app.get('/health', async (req, res) => {
   try {
@@ -170,6 +176,23 @@ app.get('/health', async (req, res) => {
     res.status(500).json({ ok: false, db: false, error: e.message });
   }
 });
+
+// Fallback para SPA - todas as rotas não-API redirecionam para index.html
+app.use('/sistema', (req, res, next) => {
+  // Se é um arquivo estático, deixa o middleware de arquivos estáticos lidar
+  if (req.url.includes('.')) {
+    return next();
+  }
+  // Senão, serve o index.html para roteamento SPA
+  res.sendFile(path.join(frontendPath, 'index.html'));
+});
+
+app.get('/', (req, res) => {
+  res.redirect('/sistema/');
+});
+
+const logRoutes = require('./routes/logs')(pool);
+app.use('/api/logs', logRoutes);
 
 app.listen(PORT, () => {
   console.log(`🎉 Servidor backend rodando com sucesso na porta ${PORT}`);

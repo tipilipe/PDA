@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
+const { createLog } = require('../models/log');
 
 module.exports = (pool) => {
   // --- ROTAS PARA A TABELA DE PRATICAGEM (TARIFF) ---
@@ -27,6 +28,8 @@ module.exports = (pool) => {
   // POST: Cria ou atualiza uma tabela de praticagem (Upsert)
   router.post('/tariffs', protect, async (req, res) => {
     const { companyId } = req.user;
+    const userId = req.user.id;
+    const username = req.user.name || req.user.email || '';
     const { id, name, tag_name, basis, pu_formula, port_id } = req.body;
 
     if (!name || !tag_name || !basis || !port_id) {
@@ -41,11 +44,27 @@ module.exports = (pool) => {
           SET name = $1, tag_name = $2, basis = $3, pu_formula = $4, port_id = $5 
           WHERE id = $6 AND company_id = $7 RETURNING *`;
         result = await pool.query(query, [name, tag_name, basis, pu_formula, port_id, id, companyId]);
+        await createLog(pool, {
+          userId,
+          username,
+          action: 'update',
+          entity: 'pilotage_tariff',
+          entityId: id,
+          details: JSON.stringify(result.rows[0])
+        });
       } else { // Senão, é uma criação
         const query = `
           INSERT INTO pilotage_tariffs (name, tag_name, basis, pu_formula, port_id, company_id) 
           VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`;
         result = await pool.query(query, [name, tag_name, basis, pu_formula, port_id, companyId]);
+        await createLog(pool, {
+          userId,
+          username,
+          action: 'create',
+          entity: 'pilotage_tariff',
+          entityId: result.rows[0].id,
+          details: JSON.stringify(result.rows[0])
+        });
       }
       res.status(201).json(result.rows[0]);
     } catch (err) {
@@ -61,8 +80,18 @@ module.exports = (pool) => {
   router.delete('/tariffs/:id', protect, async (req, res) => {
     const { id } = req.params;
     const { companyId } = req.user;
+    const userId = req.user.id;
+    const username = req.user.name || req.user.email || '';
     try {
       await pool.query('DELETE FROM pilotage_tariffs WHERE id = $1 AND company_id = $2', [id, companyId]);
+      await createLog(pool, {
+        userId,
+        username,
+        action: 'delete',
+        entity: 'pilotage_tariff',
+        entityId: id,
+        details: null
+      });
       res.status(204).send();
     } catch (err) {
       console.error('Erro ao deletar tabela:', err);
@@ -88,6 +117,8 @@ module.exports = (pool) => {
   router.post('/tariffs/:tariffId/ranges', protect, async (req, res) => {
     const { tariffId } = req.params;
     const { ranges } = req.body; // Recebe um array de faixas
+    const userId = req.user.id;
+    const username = req.user.name || req.user.email || '';
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -99,6 +130,14 @@ module.exports = (pool) => {
         );
       }
       await client.query('COMMIT');
+      await createLog(pool, {
+        userId,
+        username,
+        action: 'update',
+        entity: 'pilotage_tariff_ranges',
+        entityId: tariffId,
+        details: JSON.stringify(ranges)
+      });
       res.status(200).json({ message: 'Faixas salvas com sucesso.' });
     } catch (err) {
       await client.query('ROLLBACK');

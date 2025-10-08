@@ -11,6 +11,7 @@ import PortServicesPage from './pages/PortServicesPage';
 import CalculationsPage from './pages/CalculationsPage';
 import PortRemarksPage from './pages/PortRemarksPage';
 import PdasPage from './pages/PdasPage';
+import AcervoPage from './pages/AcervoPage';
 import PilotagePage from './pages/PilotagePage';
 import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
@@ -18,6 +19,7 @@ import RequireAdmin from './components/RequireAdmin';
 import Layout from './components/Layout';
 // (import duplicado removido)
 import AuthContext from './context/AuthContext';
+import LogPage from './pages/LogPage';
 
 function RequireTab({ tabKey, children }) {
   const { settings, settingsReady, user } = React.useContext(AuthContext);
@@ -35,6 +37,7 @@ function ProtectedRoutes() {
   return (
     <Route element={<Layout />}>
   <Route path="/pda" element={<RequireTab tabKey="pda"><PdasPage /></RequireTab>} />
+  <Route path="/acervo" element={<RequireTab tabKey="acervo"><AcervoPage /></RequireTab>} />
       {/* root PDA deve sempre estar permitido se pda = true ou admin */}
   <Route path="/ships" element={<RequireTab tabKey="ships"><ShipsPage /></RequireTab>} />
   <Route path="/clients" element={<RequireTab tabKey="clients"><ClientsPage /></RequireTab>} />
@@ -46,6 +49,7 @@ function ProtectedRoutes() {
   <Route path="/port-remarks" element={<RequireTab tabKey="port_remarks"><PortRemarksPage /></RequireTab>} />
   <Route path="/profile" element={<RequireTab tabKey="profile"><ProfilePage /></RequireTab>} />
   <Route path="/admin" element={<RequireAdmin><RequireTab tabKey="admin"><AdminPage /></RequireTab></RequireAdmin>} />
+  <Route path="/log" element={<RequireTab tabKey="log"><LogPage /></RequireTab>} />
     <Route path="/dashboard" element={<RequireTab tabKey="dashboard"><DashboardPage /></RequireTab>} />
     </Route>
   );
