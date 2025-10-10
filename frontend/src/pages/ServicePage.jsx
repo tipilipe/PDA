@@ -156,12 +156,14 @@ function ServicePage() {
                     <td>{service.name}</td>
                     <td>{service.is_taxable ? 'Sim' : 'Não'}</td>
                     <td>
-                      <button className="header-btn" style={{ minWidth: 0, fontWeight: 700 }} onClick={() => handleOpenEditModal(service)}>
-                        <span role="img" aria-label="Editar">✏️</span>
-                      </button>
-                      <button className="header-btn" style={{ minWidth: 0, fontWeight: 700, background: '#b42318', marginLeft: 6 }} onClick={() => handleDeleteService(service.id)}>
-                        <span role="img" aria-label="Excluir">🗑️</span>
-                      </button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+                        <button className="header-btn" style={{ minWidth: 0, fontWeight: 700 }} onClick={() => handleOpenEditModal(service)}>
+                          <span role="img" aria-label="Editar">✏️</span>
+                        </button>
+                        <button className="header-btn" style={{ minWidth: 0, fontWeight: 700, background: '#b42318' }} onClick={() => handleDeleteService(service.id)}>
+                          <span role="img" aria-label="Excluir">🗑️</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

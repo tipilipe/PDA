@@ -332,21 +332,27 @@ module.exports = (pool) => {
     try {
       await client.query('BEGIN');
       
-      // Verifica se a PDA existe e pertence à empresa do usuário
-      const checkQuery = 'SELECT id FROM pdas WHERE id = $1 AND company_id = $2';
-      const checkResult = await client.query(checkQuery, [id, companyId]);
-      
-      if (checkResult.rows.length === 0) {
+      // Busca dados principais da PDA antes de deletar
+      const infoQuery = `
+        SELECT pda.pda_number, s.name AS ship_name, c.name AS client_name, p.name AS port_name
+        FROM pdas pda
+        JOIN ships s ON pda.ship_id = s.id
+        JOIN clients c ON pda.client_id = c.id
+        JOIN ports p ON pda.port_id = p.id
+        WHERE pda.id = $1 AND pda.company_id = $2
+      `;
+      const infoResult = await client.query(infoQuery, [id, companyId]);
+      if (infoResult.rows.length === 0) {
         await client.query('ROLLBACK');
         return res.status(404).json({ error: 'PDA não encontrada.' });
       }
-      
+      const pdaInfo = infoResult.rows[0];
+
       // Remove os itens da PDA primeiro (devido à foreign key)
       await client.query('DELETE FROM pda_items WHERE pda_id = $1', [id]);
-      
       // Remove a PDA
       await client.query('DELETE FROM pdas WHERE id = $1', [id]);
-      
+
       await client.query('COMMIT');
       await createLog(pool, {
         userId,
@@ -354,7 +360,7 @@ module.exports = (pool) => {
         action: 'delete',
         entity: 'pda',
         entityId: id,
-        details: null
+        details: JSON.stringify(pdaInfo)
       });
       res.json({ message: 'PDA excluída com sucesso.' });
     } catch (err) {

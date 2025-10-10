@@ -1,5 +1,6 @@
 // frontend/src/pages/PdasPage.jsx
 import React, { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { API_BASE } from '../config';
 import PrintablePda from '../components/PrintablePda';
@@ -8,6 +9,7 @@ import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-ki
 import { SortableItem } from '../components/SortableItem';
 
 function PdasPage() {
+  const location = useLocation();
   const componentRef = useRef();
   const [ships, setShips] = useState([]);
   const [ports, setPorts] = useState([]);
@@ -310,6 +312,17 @@ function PdasPage() {
   };
 
   useEffect(() => { fetchInitialData(); }, []);
+
+  // Detect navigation from AcervoPage with openPdaId and auto-load PDA
+  useEffect(() => {
+    if (location && location.state && location.state.openPdaId) {
+      const pdaId = location.state.openPdaId;
+      if (pdaId) {
+        handleOpenPda(pdaId);
+      }
+    }
+    // eslint-disable-next-line
+  }, [location]);
 
   const handleGeneratePda = async () => {
     if (!selectedShipId || !selectedPortId || !roe || !selectedClientId) { alert('Por favor, selecione um Navio, Cliente, Porto e informe a ROE.'); return; }
