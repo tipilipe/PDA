@@ -199,15 +199,15 @@ function CalculationsPage() {
                 </form>
                 <div style={{ marginTop: '32px' }}>
                   <h3 style={{ color: '#222', fontWeight: 700, marginBottom: 12 }}>Fórmulas Salvas para este Porto</h3>
-                  <div className="table-responsive">
-                    <table className="table-basic" style={{ background:'#fff' }}>
+                  <div className="table-responsive" style={{ maxHeight: 340, overflowY: 'auto', background: '#fff', borderRadius: 10, boxShadow: '0 1px 4px #0001', padding: '0 0 8px 0' }}>
+                    <table className="table-basic" style={{ background:'#fff', marginBottom:0 }}>
                       <thead>
                         <tr>
                           <th>Serviço</th>
                           <th>Método</th>
                           <th>Moeda</th>
                           <th>Fórmula/Valor</th>
-                          <th>Ações</th>
+                          <th style={{minWidth:100}}>Ações</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -217,9 +217,13 @@ function CalculationsPage() {
                             <td>{c.calculation_method}</td>
                             <td>{c.currency}</td>
                             <td style={{ wordBreak: 'break-all' }}>{c.formula}</td>
-                            <td>
-                              <button className="header-btn" style={{ minWidth: 0, fontWeight: 700 }} onClick={() => handleEditClick(c)}>Editar</button>
-                              <button className="header-btn" style={{ minWidth: 0, fontWeight: 700, color: 'red', background: 'transparent' }} onClick={() => handleDeleteClick(c.id)}>Excluir</button>
+                            <td style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
+                              <button className="header-btn" style={{ minWidth: 0, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => handleEditClick(c)}>
+                                <span role="img" aria-label="Editar">✏️</span>
+                              </button>
+                              <button className="header-btn" style={{ minWidth: 0, fontWeight: 700, background: '#b42318', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => handleDeleteClick(c.id)}>
+                                <span role="img" aria-label="Excluir">🗑️</span>
+                              </button>
                             </td>
                           </tr>
                         ))}

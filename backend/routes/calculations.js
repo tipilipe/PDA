@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
+const { createLog } = require('../models/log');
 
 module.exports = (pool) => {
   router.get('/:portId', protect, async (req, res) => {
@@ -25,6 +26,8 @@ module.exports = (pool) => {
   router.post('/', protect, async (req, res) => {
     const { port_id, service_id, currency, formula, calculation_method } = req.body;
     const { companyId } = req.user;
+    const userId = req.user.id;
+    const username = req.user.name || req.user.email || '';
     if (!port_id || !service_id || !currency || !formula || !calculation_method) {
       return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
     }
@@ -38,6 +41,14 @@ module.exports = (pool) => {
     const values = [port_id, service_id, currency, formula, companyId, calculation_method];
     try {
       const result = await pool.query(queryText, values);
+      await createLog(pool, {
+        userId,
+        username,
+        action: 'create',
+        entity: 'calculation',
+        entityId: result.rows[0].id,
+        details: JSON.stringify(result.rows[0])
+      });
       res.status(200).json(result.rows[0]);
     } catch (err) {
       console.error('Erro ao salvar cálculo:', err);
@@ -50,6 +61,8 @@ module.exports = (pool) => {
     const { id } = req.params;
     const { port_id, service_id, currency, formula, calculation_method } = req.body;
     const { companyId } = req.user;
+    const userId = req.user.id;
+    const username = req.user.name || req.user.email || '';
     if (!port_id || !service_id || !currency || !formula || !calculation_method) {
       return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
     }
@@ -64,6 +77,14 @@ module.exports = (pool) => {
       if (result.rowCount === 0) {
         return res.status(404).json({ error: 'Cálculo não encontrado ou não pertence à sua empresa.' });
       }
+      await createLog(pool, {
+        userId,
+        username,
+        action: 'update',
+        entity: 'calculation',
+        entityId: id,
+        details: JSON.stringify(result.rows[0])
+      });
       res.status(200).json(result.rows[0]);
     } catch (err) {
       console.error('Erro ao atualizar cálculo:', err);
@@ -75,6 +96,8 @@ module.exports = (pool) => {
   router.delete('/:id', protect, async (req, res) => {
     const { id } = req.params;
     const { companyId } = req.user;
+    const userId = req.user.id;
+    const username = req.user.name || req.user.email || '';
     try {
       const result = await pool.query(
         'DELETE FROM calculations WHERE id = $1 AND company_id = $2 RETURNING *',
@@ -83,6 +106,14 @@ module.exports = (pool) => {
       if (result.rowCount === 0) {
         return res.status(404).json({ error: 'Cálculo não encontrado ou não pertence à sua empresa.' });
       }
+      await createLog(pool, {
+        userId,
+        username,
+        action: 'delete',
+        entity: 'calculation',
+        entityId: id,
+        details: null
+      });
       res.status(204).send(); // Sucesso, sem corpo de resposta
     } catch (err) {
       console.error('Erro ao deletar cálculo:', err);

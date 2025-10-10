@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
+const { createLog } = require('../models/log');
 
 module.exports = (pool) => {
   // Helpers to sanitize inputs coming from forms (often as empty strings)
@@ -51,9 +52,11 @@ module.exports = (pool) => {
     }
   });
 
-  // Rota POST (sem alterações)
+  // Rota POST (criar navio)
   router.post('/', protect, async (req, res) => {
     const companyId = req.user.companyId;
+    const userId = req.user.id;
+    const username = req.user.name || req.user.email || '';
     const { name, imo, dwt, grt, net, loa, beam, draft, depth, flag, year } = req.body;
     const nameTrimmed = String(name || '').trim();
     if (!nameTrimmed) { return res.status(400).json({ error: 'O nome do navio é obrigatório.' }); }
@@ -76,6 +79,14 @@ module.exports = (pool) => {
     ];
     try {
       const result = await pool.query(queryText, values);
+      await createLog(pool, {
+        userId,
+        username,
+        action: 'create',
+        entity: 'ship',
+        entityId: result.rows[0].id,
+        details: JSON.stringify(result.rows[0])
+      });
       res.status(201).json(result.rows[0]);
     } catch (err) {
       if (err.code === '23505') { return res.status(409).json({ error: 'Este número IMO já está cadastrado para sua empresa.' });}
@@ -88,8 +99,9 @@ module.exports = (pool) => {
   router.put('/:id', protect, async (req, res) => {
     const { id } = req.params;
     const { companyId } = req.user;
+    const userId = req.user.id;
+    const username = req.user.name || req.user.email || '';
     const { name, imo, dwt, grt, net, loa, beam, draft, depth, flag, year } = req.body;
-    
     const queryText = `
       UPDATE ships 
       SET name = $1, imo = $2, dwt = $3, grt = $4, net = $5, loa = $6, beam = $7, draft = $8, depth = $9, flag = $10, year = $11
@@ -119,6 +131,14 @@ module.exports = (pool) => {
       if (result.rows.length === 0) {
         return res.status(404).json({ error: 'Navio não encontrado ou não pertence à sua empresa.' });
       }
+      await createLog(pool, {
+        userId,
+        username,
+        action: 'update',
+        entity: 'ship',
+        entityId: id,
+        details: JSON.stringify(result.rows[0])
+      });
       res.json(result.rows[0]);
     } catch (err) {
       if (err.code === '23505') { return res.status(409).json({ error: 'Este número IMO já pertence a outro navio.' });}
@@ -127,5 +147,32 @@ module.exports = (pool) => {
     }
   });
 
+  // DELETE navio
+  router.delete('/:id', protect, async (req, res) => {
+    const { id } = req.params;
+    const companyId = req.user.companyId;
+    const userId = req.user.id;
+    const username = req.user.name || req.user.email || '';
+    try {
+      // Verifica se o navio pertence à empresa
+      const check = await pool.query('SELECT id FROM ships WHERE id = $1 AND company_id = $2', [id, companyId]);
+      if (check.rows.length === 0) {
+        return res.status(404).json({ error: 'Navio não encontrado ou não pertence à sua empresa.' });
+      }
+      await pool.query('DELETE FROM ships WHERE id = $1', [id]);
+      await createLog(pool, {
+        userId,
+        username,
+        action: 'delete',
+        entity: 'ship',
+        entityId: id,
+        details: null
+      });
+      res.json({ message: 'Navio excluído com sucesso.' });
+    } catch (err) {
+      console.error('Erro ao excluir navio:', err);
+      res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  });
   return router;
 };

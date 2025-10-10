@@ -6,6 +6,7 @@ import { API_BASE } from '../config';
 const ALL_TABS = [
 	{ key: 'dashboard', label: 'Dashboard' },
 	{ key: 'pda', label: 'Gerar PDA' },
+	{ key: 'acervo', label: 'Acervo' },
 	{ key: 'ships', label: 'Navios' },
 	{ key: 'clients', label: 'Clientes' },
 	{ key: 'ports', label: 'Portos' },
@@ -16,6 +17,7 @@ const ALL_TABS = [
 	{ key: 'port_remarks', label: 'Observações' },
 	{ key: 'profile', label: 'Perfil' },
 	{ key: 'admin', label: 'Administração' },
+	{ key: 'log', label: 'Log de Ações' }, // <-- Adiciona permissão de aba para LOG
 ];
 
 const AdminPage = () => {

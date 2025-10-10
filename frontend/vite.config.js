@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
     // Permite definir um subcaminho para servir a SPA, ex: /sistema/
-    base: env.VITE_BASE_PATH || '/',
+    base: '/sistema/',
     // Em desenvolvimento, faça proxy das chamadas /api para o backend local
     server: {
       proxy: {

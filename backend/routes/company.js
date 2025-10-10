@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
+const { createLog } = require('../models/log');
 
 module.exports = (pool) => {
   const buildBankDetailsText = (obj) => {
@@ -52,7 +53,7 @@ module.exports = (pool) => {
   router.put('/profile', protect, async (req, res) => {
     const { companyId, userId } = req.user;
     const { company, user } = req.body;
-
+    const username = req.user.name || req.user.email || '';
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -164,6 +165,14 @@ module.exports = (pool) => {
       }
 
       await client.query('COMMIT');
+      await createLog(pool, {
+        userId,
+        username,
+        action: 'update',
+        entity: 'company_profile',
+        entityId: companyId,
+        details: JSON.stringify({ company, user })
+      });
       res.json({ message: 'Perfil atualizado com sucesso!' });
 
     } catch (err) {

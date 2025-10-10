@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
+const { createLog } = require('../models/log');
 
 module.exports = (pool) => {
   // ROTA GET: Busca todas as remarks de um porto específico
@@ -25,7 +26,8 @@ module.exports = (pool) => {
     const { portId } = req.params;
     const { remarks } = req.body; // Recebe um array de objetos remark [{remark_text, display_order}]
     const { companyId } = req.user;
-
+    const userId = req.user.id;
+    const username = req.user.name || req.user.email || '';
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -40,6 +42,14 @@ module.exports = (pool) => {
         );
       }
       await client.query('COMMIT');
+      await createLog(pool, {
+        userId,
+        username,
+        action: 'update',
+        entity: 'port_remarks',
+        entityId: portId,
+        details: JSON.stringify(remarks)
+      });
       res.status(200).json({ message: 'Remarks salvas com sucesso!' });
     } catch (err) {
       await client.query('ROLLBACK');

@@ -9,6 +9,7 @@ export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
   const baseItems = [
     { key:'dashboard', to: '/dashboard', label: 'Dashboard' },
   { key:'pda', to: '/pda', label: 'PDA' },
+  { key:'acervo', to: '/acervo', label: 'Acervo' },
     { key:'ships', to: '/ships', label: 'Navios' },
     { key:'clients', to: '/clients', label: 'Clientes' },
     { key:'ports', to: '/ports', label: 'Portos' },
@@ -22,6 +23,8 @@ export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
   // Admin somente se is_admin true OU role admin
   if (settings?.is_admin || user?.role?.toLowerCase() === 'admin') {
     baseItems.push({ key:'admin', to:'/admin', label:'Administração' });
+    // Adiciona LOG para admin
+    baseItems.push({ key:'log', to:'/log', label:'Log de Ações' });
   }
   const items = useMemo(()=>{
     // Se não houver perms ainda (carregando), mostro só PDA e Perfil para evitar sumiço total

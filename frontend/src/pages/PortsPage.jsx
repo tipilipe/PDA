@@ -82,6 +82,17 @@ function PortsPage() {
     }
   };
 
+  const handleDeletePort = async (id) => {
+    if (!window.confirm('Tem certeza que deseja excluir este porto?')) return;
+    try {
+      await axios.delete(`${API_BASE}/api/ports/${id}`);
+      fetchData();
+    } catch (err) {
+      alert('Erro ao excluir o porto.');
+      console.error(err);
+    }
+  };
+
   if (loading) return <div>Carregando...</div>;
   if (error) return <div style={{ color: 'red' }}>{error}</div>;
 
@@ -149,7 +160,14 @@ function PortsPage() {
                     <td>{port.berth}</td>
                     <td>{port.client_name || 'N/A'}</td>
                     <td>{port.remark}</td>
-                    <td><button className="header-btn" style={{ minWidth: 0, fontWeight: 700 }} onClick={() => handleOpenEditModal(port)}>Editar</button></td>
+                      <td>
+                        <button className="header-btn" style={{ minWidth: 0, fontWeight: 700 }} onClick={() => handleOpenEditModal(port)}>
+                          <span role="img" aria-label="Editar">✏️</span>
+                        </button>
+                        <button className="header-btn" style={{ minWidth: 0, fontWeight: 700, background: '#b42318', marginLeft: 6 }} onClick={() => handleDeletePort(port.id)}>
+                          <span role="img" aria-label="Excluir">🗑️</span>
+                        </button>
+                      </td>
                   </tr>
                 ))}
               </tbody>
